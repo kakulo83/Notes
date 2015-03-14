@@ -1,2 +1,2 @@
 #!/bin/bash
-nwjs ./index.html
+/Applications/node-webkit.app/Contents/MacOS/node-webkit .
