@@ -1,0 +1,9 @@
+{
+	"name": "VILearn",
+	"main": "index.html",
+	"window": {
+		"toolbar": true,
+		"width": 1400,
+		"height": 800 
+	}
+}
