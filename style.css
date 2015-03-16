@@ -1,1 +1,66 @@
-body { background-color: black; }
+html {
+height: 100%;    
+}
+body {
+position: relative;
+min-height: 100%;    
+background-color: black;
+margin: 0;
+}
+#main-pane { /* should be equal to or greater than height of footer */
+height: 760px;
+}
+footer {
+position: absolute;
+width: 100%;
+height: 40px;
+}
+#status-line {
+height: 15px;
+background-color: gray;
+}
+#status-line .MODE, #status-line .file {
+height: 15px;
+display: inline-block;
+vertical-align: top;
+padding-left: 5px;
+padding-right: 5px;
+font-size: 10px;
+font-family: "monaco";
+}
+#status-line .MODE {
+text-transform: uppercase;
+}
+#status-line .MODE.NORMAL {
+background-color: rgb(175,215,25);
+color: rgb(46,86,8);
+}
+#status-line .MODE.HIERARCHY {
+background-color: blue;
+color: white;
+}
+#status-line .MODE.PROCESS {
+background-color: red;
+color: white;
+}
+#status-line .MODE.MODEL {
+background-color: orange;
+color: yellow;
+}
+#status-line .file {
+background-color: lightgray;
+}
+#command-window {
+width: 100%;
+}
+#command-prompt {
+width: 100%;
+border: none;
+background-color: black;
+color: white;
+margin: 0;
+padding: 0;
+}
+#command-prompt:focus {
+outline-width: 0;
+}
