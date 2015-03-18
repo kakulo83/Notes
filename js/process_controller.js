@@ -4,8 +4,16 @@ var ProcessController = function(app) {
 	this.app = app;
 };
 
-ProcessController.prototype.handleKeyPress = function(charCode) {
-		console.log("Process KeyPress");
+ProcessController.prototype.initGui = function() {
+	$("#main-pane").attr("class", "");
+	$("#main-pane").addClass("PROCESS");
+	$(".MODE").text("PROCESS");	
+}
+
+ProcessController.prototype.handleKeyPress = function(e) {
+
+		var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
+		
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_CANCEL:
 	
@@ -143,7 +151,7 @@ ProcessController.prototype.handleKeyPress = function(charCode) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_H:
-
+				this.app.changeMode(Constants.Mode.HIERARCHY);
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
 
@@ -158,7 +166,7 @@ ProcessController.prototype.handleKeyPress = function(charCode) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
-
+				this.app.changeMode(Constants.Mode.MODEL);
 				break;
 			case Constants.KeyEvent.DOM_VK_N:
 

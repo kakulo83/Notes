@@ -4,8 +4,16 @@ var HierarchyController = function(app) {
 	this.app = app;
 };
 
-HierarchyController.prototype.handleKeyPress = function(charCode) {
-		console.log("Hierarchy KeyPress");
+HierarchyController.prototype.initGui = function() {
+	$("#main-pane").attr("class", "");
+	$("#main-pane").addClass("HIERARCHY");
+	$(".MODE").text("HIERACHY");	
+}
+
+HierarchyController.prototype.handleKeyPress = function(e) {
+
+		var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
+	
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_CANCEL:
 	
@@ -158,7 +166,7 @@ HierarchyController.prototype.handleKeyPress = function(charCode) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
-
+				this.app.changeMode(Constants.Mode.MODEL);
 				break;
 			case Constants.KeyEvent.DOM_VK_N:
 
@@ -167,7 +175,7 @@ HierarchyController.prototype.handleKeyPress = function(charCode) {
 			
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
-				
+				this.app.changeMode(Constants.Mode.PROCESS);
 				break;
 			case Constants.KeyEvent.DOM_VK_Q:
 

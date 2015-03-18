@@ -4,7 +4,15 @@ var NormalController = function(app) {
 	this.app = app;
 };
 
-NormalController.prototype.handleKeyPress = function(charCode) {
+NormalController.prototype.initGui = function() {
+	$("#main-pane").css("background-color", "green");	
+	$(".MODE").text("NORMAL");
+}
+
+NormalController.prototype.handleKeyPress = function(e) {
+
+		var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
+
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_CANCEL:
 	
@@ -43,7 +51,6 @@ NormalController.prototype.handleKeyPress = function(charCode) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_ESCAPE:
-				debugger
 				var commandPrompt = window.document.getElementById("command-prompt");
 				commandPrompt.disabled = true;
 				commandPrompt.blur();
@@ -118,10 +125,13 @@ NormalController.prototype.handleKeyPress = function(charCode) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_COLON:
-				debugger
-				var commandPrompt = window.document.getElementById("command-prompt");
-				commandPrompt.disabled = false;
-				commandPrompt.focus();
+				console.log("COLON PRESSED");
+				if (e.shiftKey === true) {
+					var commandPrompt = window.document.getElementById("command-prompt");
+					commandPrompt.focus();
+					commandPrompt.textContent = ":";
+					commandPrompt.disabled = false;
+				}
 				break;
 			case Constants.KeyEvent.DOM_VK_SEMICOLON:
 
@@ -151,7 +161,7 @@ NormalController.prototype.handleKeyPress = function(charCode) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_H:
-
+				this.app.changeMode(Constants.Mode.HIERARCHY);
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
 

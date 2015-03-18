@@ -11,8 +11,16 @@ var ModelController = function(app) {
 	this.app = app;
 };
 
-ModelController.prototype.handleKeyPress = function(charCode) {
-		console.log("Model KeyPress");
+ModelController.prototype.initGui = function() {
+	$("#main-pane").attr("class", "");
+	$("#main-pane").addClass("MODEL");
+	$(".MODE").text("MODEL");	
+}
+
+ModelController.prototype.handleKeyPress = function(e) {
+
+		var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
+		
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_CANCEL:
 	
@@ -150,7 +158,7 @@ ModelController.prototype.handleKeyPress = function(charCode) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_H:
-
+				this.app.changeMode(Constants.Mode.HIERARCHY);	
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
 
@@ -174,7 +182,7 @@ ModelController.prototype.handleKeyPress = function(charCode) {
 			
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
-				
+				this.app.changeMode(Constants.Mode.PROCESS);
 				break;
 			case Constants.KeyEvent.DOM_VK_Q:
 

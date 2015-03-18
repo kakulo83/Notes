@@ -11,6 +11,15 @@
 		<script src="./lib/underscore.1.8.2.js" type="text/javascript" charset="utf-8"></script>
 		<script src="./js/utilities.js" type="text/javascript" charset="utf-8"></script>
 		<script src="./app.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" charset="utf-8">
+			global.$ = $;
+			var Handlebars = require("./lib/handlebars-v3.0.0.js");
+			var NormalController = require("./js/normal_controller.js");
+			var HierarchyController = require("./js/hierarchy_controller.js");
+			var ProcessController = require("./js/process_controller.js");
+			var ModelController = require("./js/model_controller.js");
+			var Constants = require("./js/constants.js");
+		</script>
 	</head>
 	<body>
 		<div id="main-pane">

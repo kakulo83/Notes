@@ -10,6 +10,15 @@ margin: 0;
 #main-pane { /* should be equal to or greater than height of footer */
 height: 760px;
 }
+#main-pane.HIERARCHY {
+background-color: blue;
+}
+#main-pane.PROCESS {
+background-color: purple;
+}
+#main-pane.MODEL {
+background-color: green;
+}
 footer {
 position: absolute;
 width: 100%;
@@ -40,11 +49,11 @@ background-color: blue;
 color: white;
 }
 #status-line .MODE.PROCESS {
-background-color: red;
+background-color: purple;
 color: white;
 }
 #status-line .MODE.MODEL {
-background-color: orange;
+background-color: green;
 color: yellow;
 }
 #status-line .file {
