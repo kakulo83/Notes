@@ -1,16 +1,9 @@
 var Mode = {
-	NORMAL:		 { name: "NORMAL", value: 0 },
-	HIERARCHY: { name: "HIERARCHY", value: 1 },
-	PROCESS:   { name: "PROCESS", value: 2 },
-	MODEL:     { name: "MODEL", value: 3 }
-}
-
-
-/*
-""Character typed: h""  ""Character code: 104""
-""Character typed: p""  ""Character code: 112""
-""Character typed: o""  ""Character code: 111""
-*/
+	NORMAL:		 { toString: function() { return "NORMAL"; }, value: 0 },
+	TREE:      { toString: function() { return "TREE"; }, value: 1 },
+	PROCESS:   { toString: function() { return "PROCESS"; }, value: 2 },
+	OBJECT:    { toString: function() { return "OBJECT"; }, value: 3 }
+};
 
 var KeyEvent = {
 		DOM_VK_CANCEL: 3,
@@ -133,7 +126,8 @@ var KeyEvent = {
 		DOM_VK_META: 224
 };
 
-module.exports =  {
-	Mode: Mode,
-	KeyEvent: KeyEvent
-};
+//module.exports =  {
+	//SMALLDELTA: SMALLDELTA,
+	//Mode: Mode,
+	//KeyEvent: KeyEvent
+//};

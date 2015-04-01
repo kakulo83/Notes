@@ -1,9 +1,12 @@
 {
 	"name": "VILearn",
 	"main": "index.html",
+	"version": "0.1.0",
+	"keywords": ["vil", "node-webkit"],
 	"window": {
 		"toolbar": true,
 		"width": 1400,
-		"height": 800 
+		"height": 800,
+		"resizable": false
 	}
 }

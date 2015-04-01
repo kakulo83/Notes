@@ -1,79 +1,86 @@
-//var NormalController = require("./js/normal_controller.js");
-//var HierarchyController = require("./js/hierarchy_controller.js");
 //var ProcessController = require("./js/process_controller.js");
-//var ModelController = require("./js/model_controller.js");
-//var Constants = require("./js/constants.js");
-//var GUI = require("nw.gui");
+//var ObjectController = require("./js/object_controller.js");
 
+var gui = require("nw.gui");
+var win = gui.Window.get();
+var fs = require("fs");
+var Constants = require("./js/constants.js");
+
+global.$ = $;
+global.d3 = d3;
 var app = null;
 
 $(document).ready(function() {
+	win.showDevTools();
 	app = new App();	
 	app.init();
 });
 
-var App = function() { };
-
+App = function() { };
 App.prototype.init = function() {
 	this.getMode = function() { return this.mode; };
 	this.setMode = function(newMode) { this.mode = newMode; };
 
-	this.normal_controller = new NormalController(this);	
-	this.hierarchy_controller = new HierarchyController(this);
+	this.getSubject = function() { return this.subject; };
+	this.setSubject = function(newSubject) { this.subject = newSubject; };
+	
+	this.getProcess = function() { return this.process; };
+	this.setProcess = function(newProcess) { this.process = newProcess; };
+
+	this.getObject = function() { return this.object; };
+	this.setObject = function(newObject) { this.object= newObject; };
+
+
+	this.tree_controller    = new TreeController(this);
 	this.process_controller = new ProcessController(this);
-	this.model_controller = new ModelController(this);
+	this.object_controller  = new ObjectController(this);
 
 	document.addEventListener("keyup", this.handleKeyPress.bind(this), false);
-	this.changeMode(Constants.Mode.HIERARCHY);
+	this.changeMode(Mode.TREE);
 }
 
 App.prototype.changeMode = function(mode) {
 	this.setMode(mode);
-
-	$("#status-line .MODE").attr("class", "MODE");
-
 	switch(mode) {
-		case Constants.Mode.NORMAL:
-			$("#status-line .MODE").addClass("NORMAL").text("NORMAL");
-			this.normal_controller.initGui();
+		case Mode.TREE:
+			// TODO Render the current subject	
+			this.tree_controller.renderView();
 			break;
-		case Constants.Mode.HIERARCHY:
-			$("#status-line .MODE").addClass("HIERARCHY").text("HIERARCHY");
-			this.hierarchy_controller.initGui();
+		case Mode.PROCESS:
+			this.process_controller.renderView();
 			break;
-		case Constants.Mode.PROCESS:
-			$("#status-line .MODE").addClass("PROCESS").text("PROCESS");
-			this.process_controller.initGui();
-			break;
-		case Constants.Mode.MODEL:
-			$("#status-line .MODE").addClass("MODEL").text("MODEL");
-			this.model_controller.initGui();	
+		case Mode.OBJECT:
+			this.object_controller.renderView();	
 			break;
 		default:
 	}
 }
 
 App.prototype.handleKeyPress = function(e) {
-
 	e = e || window.event;
-  var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
-	console.log("Character typed: " + String.fromCharCode(charCode));
+  //var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
+	//console.log("Character typed: " + String.fromCharCode(charCode));
 	//console.log("Character code: " + charCode);
 
-	// Delegate to controllers depending on current Mode	
 	switch(this.getMode()) {
-		case Constants.Mode.NORMAL:
-			this.normal_controller.handleKeyPress(e);	
+		case Mode.TREE:
+			this.tree_controller.handleKeyPress(e);
 			break;
-		case Constants.Mode.HIERARCHY:
-			this.hierarchy_controller.handleKeyPress(e);
-			break;
-		case Constants.Mode.PROCESS:
+		case Mode.PROCESS:
 			this.process_controller.handleKeyPress(e);
 			break;
-		case Constants.Mode.MODEL:
-			this.model_controller.handleKeyPress(e);
+		case Mode.OBJECT:
+			this.object_controller.handleKeyPress(e);
 			break;
 		default:
+			break;
 	}
 }
+
+App.prototype.toggleMenu = function() {
+	if ($("#mode-menu-container").is(":visible")) 
+		$("#mode-menu-container").hide();
+	else
+		$("#mode-menu-container").show();
+}
+

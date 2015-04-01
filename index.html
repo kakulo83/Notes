@@ -6,28 +6,33 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<link href="style.css" rel="stylesheet" type="text/css">
 
-		<script src="./lib/d3.min.js" type="text/javascript" charset="utf-8"></script>
+		<!-- Useful libraries -->
 		<script src="./lib/jquery-1.11.2.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="./lib/underscore.1.8.2.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./lib/handlebars-v3.0.0.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./lib/d3.js" type="text/javascript" charset="utf-8"></script>
+	
+		<!-- Compiled Handlebar templates -->	
+		<script src="./templates/tree.tpl.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./templates/process.tpl.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./templates/object.tpl.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./templates/footer.tpl.js" type="text/javascript" charset="utf-8"></script>
+
+		<!-- VIL javascript files -->
 		<script src="./js/utilities.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./js/constants.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./js/tree_controller.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./js/process_controller.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./js/object_controller.js" type="text/javascript" charset="utf-8"></script>
 		<script src="./app.js" type="text/javascript" charset="utf-8"></script>
-		<script type="text/javascript" charset="utf-8">
-			global.$ = $;
-			var Handlebars = require("./lib/handlebars-v3.0.0.js");
-			var NormalController = require("./js/normal_controller.js");
-			var HierarchyController = require("./js/hierarchy_controller.js");
-			var ProcessController = require("./js/process_controller.js");
-			var ModelController = require("./js/model_controller.js");
-			var Constants = require("./js/constants.js");
-		</script>
+	
 	</head>
 	<body>
-		<div id="main-pane">
-
-		</div>		
+		<div id="mode-container">
+			<!-- mode specific content -->
+		</div>
 		<footer>
-			<div id="status-line"><span class="MODE">..</span><span class="file">untitled</span></div>
-			<div id="command-window"><input id="command-prompt" type="text" disabled="disabled"/></div>
+			<!-- mode specific footer -->
 		</footer>	
 	</body>
 </html>

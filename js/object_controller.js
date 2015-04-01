@@ -1,10 +1,13 @@
-var ProcessController = function(app) {
+//var = require("./constants.js");
+
+var ObjectController = function(app) { 
 	this.app = app;
 };
 
-ProcessController.prototype.renderView = function() {
+ObjectController.prototype.renderView = function() {
+
 	// Generate Mode Template
-	var modeTemplate = Handlebars.templates.process;
+	var modeTemplate = Handlebars.templates.object;
 	var mainData = {
 	};
 
@@ -13,43 +16,44 @@ ProcessController.prototype.renderView = function() {
 	// Generate Footer Template
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
-		mode: Mode.PROCESS.toString(),
-		options: ["(a)dd process", "(m)ove process", "(d)elete process", "(c)opy process"]
+		mode: Mode.OBJECT.toString(),
+		options: ["(a)dd object", "(m)ove object", "(d)elete object", "(c)opy object"]
 	};
 	$("footer").html(footerTemplate(footerData));
 
 }
 
-ProcessController.prototype.handleKeyPress = function(e) {
+ObjectController.prototype.handleKeyPress = function(e) {
 	var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
 
 	switch(charCode) {
 		case KeyEvent.DOM_VK_A:
-			// Add new process 
+			// Add new object 
 			break;
 		case KeyEvent.DOM_VK_C:
-			// Copy process 
+			// Copy object 
 			break;
 		case KeyEvent.DOM_VK_D:
-			// Delete process 
+			// Delete object 
 			break;
 		case KeyEvent.DOM_VK_I:
-			// Insert process 
+			// Insert object 
+			var vimWindow = window.open("vim.html", "_blank", 'screenX=0,screenY=0,width=800,height=600'); 
 			break;
 		case KeyEvent.DOM_VK_J:
-			// Move down process
+			// Move down object
 			break;
 		case KeyEvent.DOM_VK_K:
-			// Move up process 
+			// Move up object 
 			break;
 		case KeyEvent.DOM_VK_M:
 			// Open mode specific menu	
-			this.app.toggleMenu();
-
+			this.app.toggleMenu();	
+			
 			// (Secondary) fold one level 
 			break;	
-		case KeyEvent.DOM_VK_O:
-			this.app.changeMode(Mode.OBJECT);
+		case KeyEvent.DOM_VK_P:
+			this.app.changeMode(Mode.PROCESS);
 			break;
 		case KeyEvent.DOM_VK_R:
 			// Unfold one level
@@ -67,8 +71,9 @@ ProcessController.prototype.handleKeyPress = function(e) {
 			// Zoom out?
 			break;
 		default:
-			this.baseController.handleKeyPress(e);
+			console.log(String.interpolate("No handler for %@", charCode));	
 	}
+
 }
 
-//module.exports = ProcessController;
+//module.exports = ObjectController;

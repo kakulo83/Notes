@@ -1,0 +1,110 @@
+MODE SPECIFIC MENU
+		
+		- When in 'normal' for current MODE, activate menu with 'm' key 
+
+NODE NAVIGATION:
+
+		- Quick navigation with "F" key in normal mode brings up
+				yellow box with link letters that when pressed makes
+				the target node the currently active node
+
+		- Navigation with "hjkl" keys
+				l - moves to the top of the next depth of children nodes
+				j - moves down to next sibling node
+				k - moves up to next sibling node
+				h - moves to previous depth of children/parent node
+
+		- Current Active Node
+			
+				- Pressing "Enter" key in toggles child nodes
+				- Pressing "p" key switches to Process mode for the node
+				- Pressing "o" key switches to Object mode for the node
+
+
+		- Add ability to create/destroy split horizontal/vertical panes
+
+		- Add ability to navigate focus to different panes using hotkeys
+
+		- Add ability to enter different MODES in different panes
+
+
+		d3.select(selected).select("circle").style("stroke", "red");	
+
+
+
+
+EMBED SHELL:
+	
+	http://stackoverflow.com/questions/29041367/embedding-terminal-in-a-node-webkit-app
+
+	- http://terminal.jcubic.pl/
+
+	- http://dailyjs.com/2015/01/22/terminaljs/
+
+
+
+
+
+
+
+
+
+
+D3 EXAMPLES:
+
+	DOCS:  https://github.com/mbostock/d3/wiki/API-Reference
+
+	The D3 gallery (https://github.com/mbostock/d3/wiki/Gallery) contains some of the most interesting examples that you can find online regarding D3 usage. 
+	It contains examples on different visualization charts, specific techniques, and some interesting visualization implementations in the wild, among others.
+
+	BioVisualize(http://biovisualize.github.io/d3visualization) is another D3 gallery with categorization, to help you find your desired visualization example online quickly.
+
+	The D3 tutorials page (https://github.com/mbostock/d3/wiki/Tutorials) contains a collection of tutorials, talks and slides created by various contributors over time, 
+	to demonstrate in detail how to use a lot of D3 concepts and techniques.
+
+	D3 plugins (https://github.com/d3/d3-plugins). Maybe some features are missing in D3 for your visualization needs? Before you decide to implement your own, 
+	make sure to check out D3 plugin repository. It contains a wide variety of plugins that provide some of the common and, sometimes, uncommon features in the visualization world.
+
+D3 HELP
+	
+	The D3 Google group (https://groups.google.com/ forum/?fromgroups#!forum/d3-js): This is the official user group for not just D3 but also other related libraries in its ecosystem.
+
+
+
+
+
+
+QUESTIONS:
+
+Are stateful controllers needed?  The javascript context associated with the window can already
+keep state, so then is it not sufficient to maintain that and convert all the controllers into 
+simple functions that reference the stateful app object?
+
+
+
+
+http://www.thecssninja.com/javascript/handleevent
+
+"People buy emotionally and justify logically"
+
+
+Structure:
+
+		Add/Move/Destroy content with "m" (menu)
+		
+		Each perspectives has 
+			- Normal (navigation) mode
+			- Insertion (create content) mode
+
+- Handlebars
+		- http://stackoverflow.com/questions/26643503/handlebars-loading-external-template-files
+
+		- handlebars templates/myView.handlebars -f myView.tpl.js
+
+
+- Build the damn thing
+		- don't get to caught up in how can I use Erlang/Scheme whatever on the backend
+		- premature optimization is the root of much evil.  build it first, then optimize
+
+
+
