@@ -1,8 +1,14 @@
+/* The value of Tree Mode is primarily from two scenarios.  The first is in information discovery.  When learning a new domain, new building blocks are discovered.
+ * Capturing their existance is the first value.  Simply what is there.  Assembling their hierarchical relationship leads to the second value.  After a domain has
+ * been forgotten in part or whole, rediscovering building blocks is easier when a logical path can be traced
+ */
+
 var TreeController = function(app) {
 	this.app = app;
 	this.chart = tree();
 	this.state = State.NORMAL;	
 	this.keyStrokeStack = [];
+	this.currentNode = null;
 };
 
 var State = { 
@@ -24,17 +30,6 @@ function tree() {
 					_bodyG;
 
 	function renderBody(svg) {
-			/*
-			if (!_bodyG) {
-					_bodyG = svg.append("g")
-			.attr("class", "body")
-			.attr("transform", function (d) {
-				return "translate(" + _margins.left 
-					+ "," + _margins.top + ")";
-			});
-			}
-			*/
-
 			_bodyG = svg.append("g")
 			.attr("class", "body")
 			.attr("transform", function (d) {
@@ -78,10 +73,12 @@ function tree() {
 							});
 
 			var nodeEnter = node.enter().append("svg:g")
-							.attr("class", "node")
+							.attr("class", function(d,i) {
+								var num = i + 1;
+								return "node " + num;
+							})
 							.attr("transform", function (d) {
-									return "translate(" + source.y0 
-					+ "," + source.x0 + ")";
+									return "translate(" + source.y0 + "," + source.x0 + ")";
 							})
 							.on("click", function (d) {
 									toggle(d);
@@ -107,8 +104,7 @@ function tree() {
 
 			var nodeExit = node.exit().transition()
 							.attr("transform", function (d) {
-									return "translate(" + source.y 
-					+ "," + source.x + ")";
+									return "translate(" + source.y + "," + source.x + ")";
 							})
 							.remove();
 
@@ -166,6 +162,7 @@ function tree() {
 									return _diagonal({source: o, target: o});
 							})
 							.remove();
+
 	}
 
 	function toggle(d) {
@@ -186,17 +183,9 @@ function tree() {
 	}
 
 	_chart.render = function () {
-			/*
-			if (!_svg) {
-					_svg = d3.select("body").append("svg")
-									.attr("height", _height)
-									.attr("width", _width);
-			}
-			*/
 			_svg = d3.select("#mode-container").append("svg")
-									.attr("height", _height)
-									.attr("width", _width);
-
+										.attr("height", _height)
+										.attr("width", _width);
 			renderBody(_svg);
 	};
 
@@ -251,31 +240,53 @@ TreeController.prototype.renderView = function(subject) {
 	else {
 		d3.json("./data/simple-flare.json", function (nodes) {
 			this.chart.nodes(nodes).render();
-		}.bind(this));
+	  }.bind(this))
 	}
+
+	// TODO replace this shitty solution with either a proper render complete callback or add promises 
+	// TODO 	
+	console.log("Setting root as current node");	
+	setTimeout(function() {   //calls click event after a certain time
+		this.currentNode = this.chart.nodes();
+		var query = String.interpolate(".node.%@", this.chart.nodes().id);
+		var rootNodeSVG = $(query);
+		d3.select(rootNodeSVG[0]).select("circle")
+			.attr("class", "current");
+	}.bind(this), 500);	
 }
 
 TreeController.prototype.handleKeyPress = function(e) {
 	var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
-
 	if (this.state === State.QUICKLINK) {
-		debugger
 		// is keystroke ESCAPE ?
 		if (charCode === KeyEvent.DOM_VK_ESCAPE) {
 			this.state = State.NORMAL;
+			this.keyStrokeStack = [];
 			removeYellowSelector();
 		}
-		// is keystroke part of the characterSet ?
-		else if (_.contains([KeyEvent.DOM_VK_S, KeyEvent.DOM_VK_D, KeyEvent.DOM_VK_F, KeyEvent.DOM_VK_J, KeyEvent.DOM_VK_K, KeyEvent.DOM_VK_L, KeyEvent.DOM_VK_E, KeyEvent.DOM_VK_W, KeyEvent.DOM_VK_CC, KeyEvent.DOM_VK_M, KeyEvent.DOM_VK_P, KeyEvent.DOM_VK_G, KeyEvent.DOM_VK_H ], charCode)) {
+		// is keystroke part of the quicklink characterSet ?
+		else if (_.contains([ KeyEvent.DOM_VK_A, KeyEvent.DOM_VK_C, KeyEvent.DOM_VK_D, KeyEvent.DOM_VK_E, KeyEvent.DOM_VK_F, KeyEvent.DOM_VK_G, KeyEvent.DOM_VK_H, KeyEvent.DOM_VK_J, KeyEvent.DOM_VK_K, KeyEvent.DOM_VK_L, KeyEvent.DOM_VK_M, KeyEvent.DOM_VK_P, KeyEvent.DOM_VK_S, KeyEvent.DOM_VK_W ], charCode)) {
 			var newChar = String.fromCharCode(charCode);
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
-			debugger							
-			if ( $(".quicklink[ ]") ) {
-				// If selection exists grab
-				var node = d3.select( );
-				makeSelectedNodeActive(node);	
+			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
+			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var quicklink = $(query);
+
+			// If selection exists grab
+			if ($(quicklink).length) {
+				this.state = State.NORMAL;
+				var node = $(quicklink).parent().parent();
+				this.keyStrokeStack = [];
+				this.setCurrentNodeFromQuickLinkSelect(node);	
+				this.state = State.NORMAL;
+				removeYellowSelector();
 			}
+		}
+		else {
+			this.state = State.NORMAL;
+			this.keyStrokeStack = [];
+			removeYellowSelector();
 		}
 	}
 	else if (this.state === State.NORMAL) {
@@ -286,18 +297,53 @@ TreeController.prototype.handleKeyPress = function(e) {
 				break;
 			case KeyEvent.DOM_VK_H:
 				// Move to left node
+				console.log("Moving to left (parent) node");
+
+				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
+				if (this.currentNode.parent)
+					this.setCurrentNodeFromDataStructureSelect(this.currentNode.parent);
+
 				break;
 			case KeyEvent.DOM_VK_I:
 				// Insert node
 				break;
 			case KeyEvent.DOM_VK_J:
 				// Move down node		
+				console.log("Moving down one (sibling) node");
+				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
+				var parent = this.currentNode.parent;
+				var childPosition = $.inArray(this.currentNode, parent.children);
+				if (childPosition < parent.children.length - 1)
+					this.setCurrentNodeFromDataStructureSelect(parent.children[childPosition + 1]);			 
+
+				// TODO handle case where jumping from set of siblings to next set of siblings (cousins to the current set of siblings)
+
 				break;
 			case KeyEvent.DOM_VK_K:
 				// Move up node
+				console.log("Moving up one (sibling) node");
+				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
+				var parent = this.currentNode.parent;
+				var childPosition = $.inArray(this.currentNode, parent.children);
+				if (childPosition > 0)
+					this.setCurrentNodeFromDataStructureSelect(parent.children[childPosition - 1]);
+				
+				// TODO handle case where jumping from set of siblings to next set of siblings (cousins to the current set of siblings)
+
 				break;
 			case KeyEvent.DOM_VK_L:
 				// Move to right node
+				console.log("Moving to right (child) node");
+				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
+				
+				// if the current node has children, move to the right and top (first child) and set as the new current node
+				if (this.currentNode.children)				
+					this.setCurrentNodeFromDataStructureSelect(this.currentNode.children[0]);		
+				// if the current node does not have children, find the next sibling that does and move to the top most of its children
+				else {
+					
+				}
+
 				break;
 			case KeyEvent.DOM_VK_M:
 				this.state = State.MENU;
@@ -325,10 +371,13 @@ TreeController.prototype.handleKeyPress = function(e) {
 			case KeyEvent.DOM_VK_ESCAPE:
 
 				break;
+			case KeyEvent.DOM_VK_RETURN: 
+				// toggles children nodes
+				d3.select(this.currentNode[0]).on("click")(d3.select(this.currentNode[0]).data()[0]);
+				break;
 			default:
 				console.log(String.interpolate("No handler for %@", charCode));
 		}
-
 	}
 	else if (this.state === State.MENU) {
 		switch(charCode) {
@@ -351,35 +400,69 @@ TreeController.prototype.handleKeyPress = function(e) {
 	}
 }
 
-function showYellowSelector() {
-	var links = d3.selectAll(".quicklink");
+TreeController.prototype.getNodeFromSVG = function(svgNode) {
+	// map the svgNode to the actual JSON node in chart().nodes()
+	
+	return svgNode;	
+}
 
-	if ( ! links.empty() ) {
-		$(".quicklink").removeClass("hide");
-	}
-	else {
-		var nodes = d3.selectAll(".node");
+TreeController.prototype.setCurrentNodeFromDataStructureSelect = function(newCurrentNode) {
+	this.currentNode = newCurrentNode;	
+
+	// Find the graphical representation of the new current node
+	var id = newCurrentNode.id;
+	var query = String.interpolate("g.node.%@", id);
+	var svgNode = $(query);	
+	
+	// remove class "current" on current graphical representation of a node
+	$("circle.current").attr("class", "");
+
+	// add class "current" on the new current graphical representation of the node
+	d3.select(svgNode[0]).select("circle")
+				.attr("class", "current");
+}
+
+TreeController.prototype.setCurrentNodeFromQuickLinkSelect = function(svgNode) {
+	// This function does 2 things.  First it sets the TreeController's current node (in reference to
+	// the tree datastructure) to the specific object in the actual datastructure tree.
+	// Second it visually sets the current node to red by adding the css class "current"
+	// to the svg circle element.
+
+	this.currentNode = this.getNodeFromSVG(svgNode);
+	
+	// remove class "current" on current graphical representation of a node
+	$("circle.current").attr("class", "");
+
+	// add class "current" on the new current graphical representation of the node
+	d3.select(svgNode[0]).select("circle")
+				.attr("class", "current");
+}
+
+function showYellowSelector() {
+	// Clear all quicklinks
+	$(".quicklink-container").remove();	
+
+	// Reattach quicklinks
+	var nodes = d3.selectAll(".node");
 		nodes.append("foreignObject")
+			.attr("class", "quicklink-container")
 			.attr("x", -10)
 			.attr("y", -12)	
 			.attr("width", 40)
 			.attr("height",18)
 			.append("xhtml:a")
 				.attr("class", function(d, i) {
-					return "quicklink " + i;
+					// TODO clean this shit up, do I really need to insert html here?  Can't SVG elements be used instead?
+					return "quicklink " + i + " " + stringNumberToHintString(i);
 				})
 				.text(function (d, i) {
 					return stringNumberToHintString(i);
 				});
-	}
-}
+ }
 
 function removeYellowSelector() {
 	d3.selectAll(".quicklink").classed({"hide": true});
 }
 
-function makeSelectedNodeActive() {
-	d3.select(selected).select("circle").style("stroke", "red");	
-}
 
 //module.exports = TreeController;

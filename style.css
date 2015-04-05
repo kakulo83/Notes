@@ -334,6 +334,9 @@ path.link {
 	stroke: #ccc;
 	stroke-width: 1.5px;
 }
+circle.current {
+	fill: red !important;
+}
 
 a.quicklink {
 text-transform: uppercase;
