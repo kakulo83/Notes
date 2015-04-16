@@ -1,3 +1,5 @@
+var PATH = "/Users/robertcarter/Documents/VIL/";
+
 var Mode = {
 	NORMAL:		 { toString: function() { return "NORMAL"; }, value: 0 },
 	TREE:      { toString: function() { return "TREE"; }, value: 1 },
@@ -42,7 +44,7 @@ var KeyEvent = {
 		DOM_VK_7: 55,
 		DOM_VK_8: 56,
 		DOM_VK_9: 57,
-		/* DOM_VK_COLON: 58, */
+		DOM_VK_COLON: 58, 
 		DOM_VK_SEMICOLON: 59,
 		DOM_VK_EQUALS: 61,
 		DOM_VK_A: 65,
@@ -126,8 +128,10 @@ var KeyEvent = {
 		DOM_VK_META: 224
 };
 
-//module.exports =  {
-	//SMALLDELTA: SMALLDELTA,
-	//Mode: Mode,
-	//KeyEvent: KeyEvent
-//};
+/*
+module.exports =  {
+	PATH: PATH,	
+	Mode: Mode,
+	KeyEvent: KeyEvent
+};
+*/

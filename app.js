@@ -1,23 +1,35 @@
-//var ProcessController = require("./js/process_controller.js");
-//var ObjectController = require("./js/object_controller.js");
-
 var gui = require("nw.gui");
 var win = gui.Window.get();
-var fs = require("fs");
-var Constants = require("./js/constants.js");
+var nativeMenuBar = new gui.Menu({ type: "menubar" });
 
-global.$ = $;
-global.d3 = d3;
+var fs = require("fs");
+var util = require("util");
+
+//var Constants = require("./js/constants.js");
+//var TreeController = require("./js/tree_controller.js");
+//var ObjectController = require("./js/object_controller.js");
+//var ProcessController = require("./js/process_controller.js");
+
+// check operating system for the menu
+if (process.platform === "darwin") {
+    nativeMenuBar.createMacBuiltin("VIL Tool");
+}
+win.menu = nativeMenuBar;
 var app = null;
 
+// Entry point for app
 $(document).ready(function() {
+	window.$ = $;
+	window.d3 = d3;
 	win.showDevTools();
+	var subject = gui.App.argv[0];
 	app = new App();	
-	app.init();
+	app.init(subject);
 });
 
 App = function() { };
-App.prototype.init = function() {
+App.prototype.init = function(subject) {
+
 	this.getMode = function() { return this.mode; };
 	this.setMode = function(newMode) { this.mode = newMode; };
 
@@ -30,27 +42,25 @@ App.prototype.init = function() {
 	this.getObject = function() { return this.object; };
 	this.setObject = function(newObject) { this.object= newObject; };
 
-
-	this.tree_controller    = new TreeController(this);
-	this.process_controller = new ProcessController(this);
-	this.object_controller  = new ObjectController(this);
+	this.tree_controller    = new TreeController(this, subject, window);
+	this.process_controller = new ProcessController(this, window);
+	this.object_controller  = new ObjectController(this, window);
 
 	document.addEventListener("keyup", this.handleKeyPress.bind(this), false);
 	this.changeMode(Mode.TREE);
 }
 
-App.prototype.changeMode = function(mode) {
+App.prototype.changeMode = function(mode, selection) {
 	this.setMode(mode);
 	switch(mode) {
 		case Mode.TREE:
-			// TODO Render the current subject	
 			this.tree_controller.renderView();
 			break;
 		case Mode.PROCESS:
 			this.process_controller.renderView();
 			break;
 		case Mode.OBJECT:
-			this.object_controller.renderView();	
+			this.object_controller.makeActive(selection);
 			break;
 		default:
 	}

@@ -44,7 +44,6 @@ ProcessController.prototype.handleKeyPress = function(e) {
 			break;
 		case KeyEvent.DOM_VK_M:
 			// Open mode specific menu	
-			this.app.toggleMenu();
 
 			// (Secondary) fold one level 
 			break;	

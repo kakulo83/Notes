@@ -42,3 +42,21 @@ var stringNumberToHintString = function(number, numHintDigits) {
   }
   return hintString.join("");
 };
+
+JSON.circularStringify = function(object) {
+	return JSON.stringify(object, function(key, value) {
+		if (key == 'parent' || key == 'x0' || key == 'y0' || key == 'depth' || key == 'x' || key == 'y' || key == 'id' || key == 'size') {
+			 return value.id;
+		 }
+		else { 
+			return value; 
+		}
+	});
+}
+
+Handlebars.registerHelper("render-html", function(context) {
+	var html = context;
+	return new Handlebars.SafeString(html);
+});
+
+

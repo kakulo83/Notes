@@ -1,53 +1,37 @@
-MODE SPECIFIC MENU
-		
-		- When in 'normal' for current MODE, activate menu with 'm' key 
+EMBED VIM
 
-NODE NAVIGATION:
+		- Display vim on top of content being edited
+		- If editing content, initialize vim with content in vim's "buffer"
+		- When done with vim, pipe content from "buffer" to app
 
-		- Quick navigation with "F" key in normal mode brings up
-				yellow box with link letters that when pressed makes
-				the target node the currently active node
 
+TREE NAVIGATION & DISPLAY:
+		- Add ability to scroll entire tree
+
+				-http://bl.ocks.org/robschmuecker/7880033	
+				
 		- Navigation with "hjkl" keys
 				l - moves to the top of the next depth of children nodes
 				j - moves down to next sibling node
 				k - moves up to next sibling node
 				h - moves to previous depth of children/parent node
 
-		- Current Active Node
-			
-				- Pressing "Enter" key in toggles child nodes
-				- Pressing "p" key switches to Process mode for the node
-				- Pressing "o" key switches to Object mode for the node
-
-
-		- Add ability to create/destroy split horizontal/vertical panes
-
-		- Add ability to navigate focus to different panes using hotkeys
-
-		- Add ability to enter different MODES in different panes
-
-
-		d3.select(selected).select("circle").style("stroke", "red");	
-
-
+		- When the tree becomes very large, add pane scrolling
+				
+		- Add hotkeys "z + m", "z+c", "z+r" to toggle
 
 
 EMBED SHELL:
 	
-	http://stackoverflow.com/questions/29041367/embedding-terminal-in-a-node-webkit-app
+		- http://stackoverflow.com/questions/29041367/embedding-terminal-in-a-node-webkit-app
 
-	- http://terminal.jcubic.pl/
+		- https://github.com/Gottox/node-webterm
 
-	- http://dailyjs.com/2015/01/22/terminaljs/
+		- https://github.com/unconed/TermKit   (Already built with node-webkit)
 
+		- http://terminal.jcubic.pl/
 
-
-
-
-
-
-
+		- http://dailyjs.com/2015/01/22/terminaljs/
 
 
 D3 EXAMPLES:
@@ -59,19 +43,11 @@ D3 EXAMPLES:
 
 	BioVisualize(http://biovisualize.github.io/d3visualization) is another D3 gallery with categorization, to help you find your desired visualization example online quickly.
 
-	The D3 tutorials page (https://github.com/mbostock/d3/wiki/Tutorials) contains a collection of tutorials, talks and slides created by various contributors over time, 
-	to demonstrate in detail how to use a lot of D3 concepts and techniques.
 
-	D3 plugins (https://github.com/d3/d3-plugins). Maybe some features are missing in D3 for your visualization needs? Before you decide to implement your own, 
-	make sure to check out D3 plugin repository. It contains a wide variety of plugins that provide some of the common and, sometimes, uncommon features in the visualization world.
 
 D3 HELP
 	
 	The D3 Google group (https://groups.google.com/ forum/?fromgroups#!forum/d3-js): This is the official user group for not just D3 but also other related libraries in its ecosystem.
-
-
-
-
 
 
 QUESTIONS:
@@ -81,11 +57,9 @@ keep state, so then is it not sufficient to maintain that and convert all the co
 simple functions that reference the stateful app object?
 
 
+	http://www.thecssninja.com/javascript/handleevent
 
-
-http://www.thecssninja.com/javascript/handleevent
-
-"People buy emotionally and justify logically"
+	"People buy emotionally and justify logically"
 
 
 Structure:
