@@ -128,10 +128,9 @@ var KeyEvent = {
 		DOM_VK_META: 224
 };
 
-/*
+
 module.exports =  {
 	PATH: PATH,	
 	Mode: Mode,
 	KeyEvent: KeyEvent
 };
-*/

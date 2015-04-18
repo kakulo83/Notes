@@ -1,0 +1,6 @@
+(function() {
+  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
+templates['codemirror'] = template({"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+    return "<link rel=\"stylesheet\" href=\"./css/codemirror.css\">\n\n<div id=\"code-mirror-container\">\n\n</div>\n\n<script>\n\n	var codeMirrorScript = document.createElement('script');\n	var vimKeyBindingsScript = document.createElement('script');\n\n	var codeMirrorPromise = new Promise(function(resolve, reject) {\n		codeMirrorScript.onload = function() {\n			resolve();	\n		};\n	}).then(function() {\n		$(\"#mode-container\").append(vimKeyBindingsScript);\n		vimKeyBindingsScript.src = \"./js/vim_keymappings.js\";\n		vimKeyBindingsScript.onload = function() {\n			var container = $(\"#code-mirror-container\")[0];\n			var textContent = $(container).parent().find(\".editable\").text();\n			var codeMirror = CodeMirror(container, {\n				value: textContent,\n				vimMode: true\n			});\n		};\n	});\n	\n	// Start async processes\n	$(\"#mode-container\").append(codeMirrorScript);	\n	codeMirrorScript.src = \"./lib/codemirror.js\";\n\n</script>\n";
+},"useData":true});
+})();

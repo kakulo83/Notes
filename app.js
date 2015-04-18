@@ -5,9 +5,9 @@ var nativeMenuBar = new gui.Menu({ type: "menubar" });
 var fs = require("fs");
 var util = require("util");
 
-//var Constants = require("./js/constants.js");
-//var TreeController = require("./js/tree_controller.js");
-//var ObjectController = require("./js/object_controller.js");
+var Constants = require("./js/constants.js");
+var TreeController = require("./js/tree_controller.js");
+var ObjectController = require("./js/object_controller.js");
 //var ProcessController = require("./js/process_controller.js");
 
 // check operating system for the menu
@@ -21,6 +21,9 @@ var app = null;
 $(document).ready(function() {
 	window.$ = $;
 	window.d3 = d3;
+	window.Handlebars = Handlebars;
+	window._ = _;
+
 	win.showDevTools();
 	var subject = gui.App.argv[0];
 	app = new App();	
@@ -43,23 +46,23 @@ App.prototype.init = function(subject) {
 	this.setObject = function(newObject) { this.object= newObject; };
 
 	this.tree_controller    = new TreeController(this, subject, window);
-	this.process_controller = new ProcessController(this, window);
 	this.object_controller  = new ObjectController(this, window);
+	//this.process_controller = new ProcessController(this, window);
 
 	document.addEventListener("keyup", this.handleKeyPress.bind(this), false);
-	this.changeMode(Mode.TREE);
+	this.changeMode(Constants.Mode.TREE);
 }
 
 App.prototype.changeMode = function(mode, selection) {
 	this.setMode(mode);
 	switch(mode) {
-		case Mode.TREE:
-			this.tree_controller.renderView();
+		case Constants.Mode.TREE:
+			this.tree_controller.makeActive();
 			break;
-		case Mode.PROCESS:
-			this.process_controller.renderView();
+		case Constants.Mode.PROCESS:
+			this.process_controller.makeActive(selection);
 			break;
-		case Mode.OBJECT:
+		case Constants.Mode.OBJECT:
 			this.object_controller.makeActive(selection);
 			break;
 		default:
@@ -73,13 +76,13 @@ App.prototype.handleKeyPress = function(e) {
 	//console.log("Character code: " + charCode);
 
 	switch(this.getMode()) {
-		case Mode.TREE:
+		case Constants.Mode.TREE:
 			this.tree_controller.handleKeyPress(e);
 			break;
-		case Mode.PROCESS:
+		case Constants.Mode.PROCESS:
 			this.process_controller.handleKeyPress(e);
 			break;
-		case Mode.OBJECT:
+		case Constants.Mode.OBJECT:
 			this.object_controller.handleKeyPress(e);
 			break;
 		default:

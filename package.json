@@ -40,7 +40,7 @@
         "mac_icon": "", 
         "transparent": false, 
         "toolbar": true, 
-        "icon": "./notes.icns"
+        "icon": ""
     }, 
     "version": "0.1.0", 
     "snapshot": "", 

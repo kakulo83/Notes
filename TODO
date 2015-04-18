@@ -1,8 +1,25 @@
 EMBED VIM
 
-		- Display vim on top of content being edited
-		- If editing content, initialize vim with content in vim's "buffer"
-		- When done with vim, pipe content from "buffer" to app
+		LOCATIONS OF INTEREST
+		- line 5876  (browser related code?)
+		- line 1432 (vimrc related code)
+		- line 7654 (beep/bell related)
+		- line 1557 (canvas related code) *
+		- line 1472 (loading local files)
+		
+		- line 1399 (handle_key )
+		- line 7648 (keyup handling) *
+
+		- line 2669329 (vim.js.mem referenced here) 
+
+
+
+		-  'x' and 'q' should close only the vim canvas
+		-  Display vim on top of content being edited
+		-  If editing content, initialize vim with content in vim's "buffer"
+		-  When done with vim, pipe content from "buffer" to app
+
+
 
 
 TREE NAVIGATION & DISPLAY:

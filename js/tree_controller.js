@@ -1,4 +1,5 @@
-//var Constants = require("./constants.js");
+var Constants = require("./constants.js");
+var Utilities = require("./utilities.js");
 
 var State = { 
 	NORMAL: 0,
@@ -8,8 +9,22 @@ var State = {
 	SCROLL: 4  // TODO Add a scroll mode where I can scroll the entire tree if it gets too big
 };
 
-var TreeController = function(app, subject) {
+// TreeController is being referenced from app.js as a node module.  This means the javascript
+// scope of TreeController is the node javascript scope AND NOT the browser javascript scope.
+// Because of this, window, $, and Handlebars have to be explicitly passed here
+var $ = null;
+var d3 = null;
+var Handlebars = null;
+var _ = null;
+
+var TreeController = function(app, subject, window) {
 	this.app = app;
+
+	$ = window.$;
+	Handlebars = window.Handlebars
+	d3 = window.d3;
+	_ = window._;
+
 	this.chart = tree();
 	this.state = State.NORMAL;
 	this.file = null;
@@ -20,13 +35,16 @@ var TreeController = function(app, subject) {
 };
 
 TreeController.prototype.makeActive = function() {
-
+	if (this.chart) 
+		this.renderView();
+	else
+		this.getTreeData();
 }
 
 TreeController.prototype.getTreeData = function(subject) {
 	if (subject) {
 		this.subject = subject;
-		var file = String.interpolate("%@%@.notes/%@.tree", PATH, subject, subject); 
+		var file = String.interpolate("%@%@.notes/%@.tree", Constants.PATH, subject, subject); 
 		d3.json(file, this.processData.bind(this));
 	}
 	else {
@@ -41,7 +59,7 @@ TreeController.prototype.getTreeData = function(subject) {
 TreeController.prototype.processData = function(error, nodes) {
 	if (nodes) {
 		// file and data exists
-		this.file = String.interpolate("%@%@.notes/%@.json", PATH, this.subject, this.subject); 
+		this.file = String.interpolate("%@%@.notes/%@.json", Constants.PATH, this.subject, this.subject); 
 		this.chart.nodes(nodes);
 		this.renderView();	
 	}
@@ -76,7 +94,7 @@ TreeController.prototype.renderView = function() {
 
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
-		mode: Mode.TREE.toString(),
+		mode: Constants.Mode.TREE.toString(),
 		options: ["(n)ew tree", "(a)dd node", "(m)ove node", "(d)elete node", "(c)opy node"]
 	};
 	$("footer").html(footerTemplate(footerData));
@@ -86,13 +104,13 @@ TreeController.prototype.handleKeyPress = function(e) {
 	var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
 	if (this.state === State.QUICKLINK) {
 		// is keystroke ESCAPE ?
-		if (charCode === KeyEvent.DOM_VK_ESCAPE) {
+		if (charCode === Constants.KeyEvent.DOM_VK_ESCAPE) {
 			this.state = State.NORMAL;
 			this.keyStrokeStack = [];
 			removeYellowSelector();
 		}
 		// is keystroke part of the quicklink characterSet ?
-		else if (_.contains([ KeyEvent.DOM_VK_A, KeyEvent.DOM_VK_C, KeyEvent.DOM_VK_D, KeyEvent.DOM_VK_E, KeyEvent.DOM_VK_F, KeyEvent.DOM_VK_G, KeyEvent.DOM_VK_H, KeyEvent.DOM_VK_J, KeyEvent.DOM_VK_K, KeyEvent.DOM_VK_L, KeyEvent.DOM_VK_M, KeyEvent.DOM_VK_P, KeyEvent.DOM_VK_S, KeyEvent.DOM_VK_W ], charCode)) {
+		else if (_.contains([ Constants.KeyEvent.DOM_VK_A, Constants.KeyEvent.DOM_VK_C, Constants.KeyEvent.DOM_VK_D, Constants.KeyEvent.DOM_VK_E, Constants.KeyEvent.DOM_VK_F, Constants.KeyEvent.DOM_VK_G, Constants.KeyEvent.DOM_VK_H, Constants.KeyEvent.DOM_VK_J, Constants.KeyEvent.DOM_VK_K, Constants.KeyEvent.DOM_VK_L, Constants.KeyEvent.DOM_VK_M, Constants.KeyEvent.DOM_VK_P, Constants.KeyEvent.DOM_VK_S, Constants.KeyEvent.DOM_VK_W ], charCode)) {
 			var newChar = String.fromCharCode(charCode);
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
@@ -118,20 +136,20 @@ TreeController.prototype.handleKeyPress = function(e) {
 	}
 	else if (this.state === State.NORMAL) {
 		switch(charCode) {
-			case KeyEvent.DOM_VK_F:
+			case Constants.KeyEvent.DOM_VK_F:
 				this.state = State.QUICKLINK;
 				showYellowSelector();
 				break;
-			case KeyEvent.DOM_VK_H:
+			case Constants.KeyEvent.DOM_VK_H:
 				// Move to left node
 				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
 				if (this.currentNode.parent)
 					this.setCurrentNodeFromDataStructureSelect(this.currentNode.parent);
 				break;
-			case KeyEvent.DOM_VK_I:
+			case Constants.KeyEvent.DOM_VK_I:
 				// Insert node
 				break;
-			case KeyEvent.DOM_VK_J:
+			case Constants.KeyEvent.DOM_VK_J:
 				// Move down node		
 				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
 				var parent = this.currentNode.parent;
@@ -144,7 +162,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 				// TODO handle case where jumping from set of siblings to next set of siblings (cousins to the current set of siblings)
 
 				break;
-			case KeyEvent.DOM_VK_K:
+			case Constants.KeyEvent.DOM_VK_K:
 				// Move up node
 				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
 				var parent = this.currentNode.parent;
@@ -153,7 +171,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 					this.setCurrentNodeFromDataStructureSelect(parent.children[childPosition - 1]);
 				// TODO handle case where jumping from set of siblings to next set of siblings (cousins to the current set of siblings)
 				break;
-			case KeyEvent.DOM_VK_L:
+			case Constants.KeyEvent.DOM_VK_L:
 				// Move to right node
 				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
 				// if the current node has children, move to the right and top (first child) and set as the new current node
@@ -167,41 +185,40 @@ TreeController.prototype.handleKeyPress = function(e) {
 				}
 
 				break;
-			case KeyEvent.DOM_VK_M:
+			case Constants.KeyEvent.DOM_VK_M:
 				this.state = State.MENU;
-				debugger
 				showMenu();	
 				// (Secondary) fold one level 
 				break;	
-			case KeyEvent.DOM_VK_O:
+			case Constants.KeyEvent.DOM_VK_O:
 				if (this.subject === "")
 					throw new Error("Subject not saved!");
 				var selection = { "subject": this.subject, "object": this.currentNode.name };
-				this.app.changeMode(Mode.OBJECT, selection);
+				this.app.changeMode(Constants.Mode.OBJECT, selection);
 				break;
-			case KeyEvent.DOM_VK_P:
-				this.app.changeMode(Mode.PROCESS);
+			case Constants.KeyEvent.DOM_VK_P:
+				this.app.changeMode(Constants.Mode.PROCESS);
 				break;
-			case KeyEvent.DOM_VK_R:
+			case Constants.KeyEvent.DOM_VK_R:
 				// Unfold one level
 				break;
-			case KeyEvent.DOM_VK_Z:
+			case Constants.KeyEvent.DOM_VK_Z:
 				// Folding Initiation key
 				break;
-			case KeyEvent.DOM_VK_ADD:
+			case Constants.KeyEvent.DOM_VK_ADD:
 				// Zoom in?
 				break;
-			case KeyEvent.DOM_VK_SUBTRACT:
+			case Constants.KeyEvent.DOM_VK_SUBTRACT:
 				// Zoom out?
 				break;
-			case KeyEvent.DOM_VK_ESCAPE:
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
 				break;
-			case KeyEvent.DOM_VK_RETURN: 
+			case Constants.KeyEvent.DOM_VK_RETURN: 
 				// toggles children nodes
 				var svgNode = this.getSVGFromNode(this.currentNode);
 				d3.select(svgNode[0]).on("click")(d3.select(svgNode[0]).data()[0]);
 				break;
-			case KeyEvent.DOM_VK_COLON:
+			case Constants.KeyEvent.DOM_VK_COLON:
 				this.state = State.COMMANDPROMPT;
 				showCommandPrompt();
 				break;
@@ -211,11 +228,11 @@ TreeController.prototype.handleKeyPress = function(e) {
 	}
 	else if (this.state === State.COMMANDPROMPT) {
 		switch(charCode) {
-			case KeyEvent.DOM_VK_ESCAPE:
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
 				hideCommandPrompt();	
 				this.state = State.NORMAL;
 				break;
-			case KeyEvent.DOM_VK_RETURN: 
+			case Constants.KeyEvent.DOM_VK_RETURN: 
 				try {	
 					this.processCommandPrompt();	
 					hideCommandPrompt();
@@ -230,23 +247,23 @@ TreeController.prototype.handleKeyPress = function(e) {
 	}
 	else if (this.state === State.MENU) {
 		switch(charCode) {
-			case KeyEvent.DOM_VK_A:
+			case Constants.KeyEvent.DOM_VK_A:
 				showMenuPrompt("Enter node name");
 				break;
-			case KeyEvent.DOM_VK_C:
+			case Constants.KeyEvent.DOM_VK_C:
 				// Copy node
 				break;
-			case KeyEvent.DOM_VK_D:
+			case Constants.KeyEvent.DOM_VK_D:
 				// Delete node
 				break;
-			case KeyEvent.DOM_VK_N:
+			case Constants.KeyEvent.DOM_VK_N:
 				showMenuPrompt("Enter Tree name");	
 				break;	
-			case KeyEvent.DOM_VK_ESCAPE:
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
 				this.state = State.NORMAL;
 				hideMenu();	
 				break;
-			case KeyEvent.DOM_VK_RETURN:
+			case Constants.KeyEvent.DOM_VK_RETURN:
 				var name = $("#menu-prompt").val();		
 				this.addNewNode(name)
 				hideMenu();	
@@ -361,7 +378,7 @@ TreeController.prototype.processCommandPrompt = function() {
 		throw new Error("No file name");
 	}
 
-	var directory = subjectFromCommandPrompt ?  (PATH + subjectFromCommandPrompt + ".notes/") : (PATH + this.subject + ".notes/");
+	var directory = subjectFromCommandPrompt ?  (Constants.PATH + subjectFromCommandPrompt + ".notes/") : (Constants.PATH + this.subject + ".notes/");
 	var file = subjectFromCommandPrompt ? (directory + subjectFromCommandPrompt + ".json") : (directory + this.subject + ".json");
 
 	// If app was called with subject, check this.file
@@ -403,7 +420,7 @@ TreeController.prototype.processCommandPrompt = function() {
 			break;
 		case "x":
 			if (subjectFromCommandPrompt !== "") {
-				var file = PATH	+ subject + ".notes" + subject + ".json";
+				var file = Constants.PATH	+ subject + ".notes" + subject + ".json";
 				writeToFile(file, this.chart.nodes());
 				gui.App.quit();
 			}
@@ -430,7 +447,7 @@ function showMenu() {
 	// Generate Footer Template
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
-		mode: Mode.TREE.toString(),
+		mode: Constants.Mode.TREE.toString(),
 		options: ["(N)ew Tree", "(a)dd node", "(m)ove node", "(d)elete node", "(c)opy node"]
 	};
 	$("footer").html(footerTemplate(footerData));
@@ -474,10 +491,10 @@ function showYellowSelector() {
 			.append("xhtml:a")
 				.attr("class", function(d, i) {
 					// TODO clean this shit up, do I really need to insert html here?  Can't SVG elements be used instead?
-					return "quicklink " + i + " " + stringNumberToHintString(i);
+					return "quicklink " + i + " " + Utilities.stringNumberToHintString(i);
 				})
 				.text(function (d, i) {
-					return stringNumberToHintString(i);
+					return Utilities.stringNumberToHintString(i);
 				});
  }
 
@@ -796,5 +813,4 @@ function tree() {
 	return _chart;
 }
 
-
-//module.exports = TreeController;
+module.exports = TreeController;
