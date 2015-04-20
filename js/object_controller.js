@@ -1,3 +1,4 @@
+var fs = require("fs"); 
 var Constants  = require("./constants.js");
 var Utilities = require("./utilities.js");
 
@@ -11,11 +12,11 @@ var State = {
 
 var ObjectController = function(app) { 
 	this.app = app;
-
 	$ = window.$;
 	Handlebars = window.Handlebars;
 	d3 = window.d3;
 	_ = window._;
+	CodeMirror = window.CodeMirror;
 
 	this.state = State.NORMAL;
 	this.contents = [];
@@ -23,6 +24,9 @@ var ObjectController = function(app) {
 };
 
 ObjectController.prototype.makeActive = function(selection) {
+	// subject is the subject matter, object is the specific topic
+	this.subject = selection.subject;
+	this.object = selection.object;
 	this.getObjectData(selection);
 }
 
@@ -57,6 +61,8 @@ ObjectController.prototype.renderView = function(content) {
 		$(new_text).append("<p class='editable'>Add text</p>");
 		$("#mode-container").append(new_text);			
 	}
+	// resize textareas
+	resizeTextAreas();
 
 	// Generate Footer Template
 	var footerTemplate = Handlebars.templates.footer;
@@ -132,7 +138,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_E:
-
+				this.editTextContent();
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
 									
@@ -145,66 +151,88 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				console.log(String.interpolate("No handler for %@", charCode));
 		}
 	}
-	else if (this.state === State.VIM) {
-		switch(charCode) {
-			case Constants.KeyEvent.DOM_VK_ENTER:
-				
-				break;
-			default:
-		}
-	}
+	else if (this.state === State.VIM) { }
 }
 
 ObjectController.prototype.openVI = function() {
 	this.state = State.VIM;
 
-	/* JSVI VIM */ 
-	//$(this.currentContent).append("<textarea id='editor'>Vi Editor Test</textarea>");
-	//$("#mode-container").append("<textarea id='editor'>Vi Editor Test</textarea>");
-	//var editor = vi(this, document.querySelector("#editor"));
-
-
-	/* EMSCRIPTEN FULL VIM 
-	var vimEditor = Handlebars.templates.vim;
-	$(this.currentContent).append(vimEditor() );
-
-	var Module = {
-		VIMJS_ALLOW_EXIT: true,
-		noInitialRun: false,
-		//noExitRuntime: true,
-		arguments: ['/usr/local/share/vim/example.js'],
-		preRun: [ function() { 
-			try {
-				FS.mkdir('/Users');
-				FS.mount(NODEFS, { root: '/Users' }, '/Users');
-			} catch(e) { }
-			try {
-				FS.mkdir('/home');
-				FS.mount(NODEFS, { root: '/home' }, '/home');
-			} catch(e) { }
-			vimjs.pre_run(); 
-		} ],
-		postRun: [],
-	};
-	*/
-
 	/* CODE MIRROR & VIM binding */ 
-	var codeMirrorTemplate = Handlebars.templates.codemirror;
-	$(this.currentContent).append(codeMirrorTemplate());
-
+	// codemirror.js :  Line 5802 is the "save" function
+	// vim_keymappings.js:  Line 4468 is the "write" function fo vim
+	var textArea = $(this.currentContent).find(".editable")[0];		
+	this.vim = CodeMirror.fromTextArea(textArea, {
+		autofocus: true,
+		lineNumbers: true,
+		keyMap: "vim",
+		showCursorWhenSelecting: true
+	});
+	var commandDisplay = $("#command-display");
+	var keys = '';
+	CodeMirror.on(this.vim, 'vim-keypress', function(key) {
+		keys = keys + key;
+		commandDisplay.innerHTML = keys;
+	});
+	CodeMirror.on(this.vim, 'vim-command-done', function(e) {
+		keys = '';
+		commandDisplay.innerHTML = keys;
+	});
+	CodeMirror.on(this.vim, 'vim-saving-done', this.closeVI.bind(this));
 }
 
-ObjectController.prototype.closeVI = function(text) {
+ObjectController.prototype.closeVI = function(e) {
+
+	// get new text
+	var newText = this.vim.getValue();
+	// get textarea element
+	var textarea = this.vim.getTextArea();
+	// remove vim textarea and set vim to null
+	this.vim.toTextArea();
+	this.vim = null;
+
+	// replace textarea with new textarea that has correct height
+	var resizedTextArea = window.document.createElement("textarea");
+	$(resizedTextArea).attr("class", "editable");
+	$(resizedTextArea).attr("disabled", "yes");
+	$(resizedTextArea).text(newText);
+	$(textarea).replaceWith(resizedTextArea);
 	this.state = State.NORMAL;
+
+	resizeTextAreas();
+
+	this.contents = $(".content");
+	saveObjectData(this.contents, { "subject": this.subject, "object": this.object });			
 }
 
-ObjectController.prototype.appendTextContent = function() {
+ObjectController.prototype.editTextContent = function() {
 	hideMenu();	
 	this.openVI();
 }
 
+ObjectController.prototype.appendTextContent = function() {
+
+}
+
 ObjectController.prototype.appendImageContent = function() {
 
+}
+
+function saveObjectData(htmlContent, selection) {
+	var filePath = String.interpolate("%@%@.notes/%@.object", Constants.PATH, selection.subject, selection.object);
+
+	// TODO this.contents needs to be wrapped with "<div class="text_content content">", right now it's only the textareas
+	var title = $(".title")[0];
+	htmlContent = $(htmlContent).toArray()
+	htmlContent.unshift(title);	
+
+	var data = "";
+	for (var i = 0; i < htmlContent.length; i++) {
+		data += htmlContent[i].outerHTML + "\n\n";	
+	}
+	fs.writeFile(filePath, data, function(err) {
+		if (err) throw err;
+		// TODO Output to command-prompt that "File saved"	
+	});
 }
 
 function showMenuPrompt(prompt) {
@@ -232,6 +260,14 @@ function showMenu() {
 	$("footer").html(footerTemplate(footerData));
 	$("#mode-menu-container").show();
 	$("#mode-menu").css("visibility", "visible");
+}
+
+function resizeTextAreas() {
+	// Resize all textareas as needed
+	var textareas = $("textarea.editable");
+	_.each(textareas, function(textarea) {
+		$(textarea).css("height", textarea.scrollHeight);
+	});
 }
 
 function hideMenu() {

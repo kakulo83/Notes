@@ -110,11 +110,19 @@ display: none;
 
 /**************** object *******************/
 .text_content {
-padding-left: 40px;
-padding-right: 40px;
 border-left: solid transparent;
+padding-left: 80px;
+padding-right: 80px;
+}
+textarea.editable {
 line-height: 20px;
 font-size: 14px;
+width: 100%;
+background-color: transparent;
+border: none;
+color: white;
+resize: none;
+outline: none;
 }
 .text_content.active {
 border-left: solid red;

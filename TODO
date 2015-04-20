@@ -1,25 +1,21 @@
 EMBED VIM
 
-		LOCATIONS OF INTEREST
-		- line 5876  (browser related code?)
-		- line 1432 (vimrc related code)
-		- line 7654 (beep/bell related)
-		- line 1557 (canvas related code) *
-		- line 1472 (loading local files)
-		
-		- line 1399 (handle_key )
-		- line 7648 (keyup handling) *
-
-		- line 2669329 (vim.js.mem referenced here) 
-
-
-
-		-  'x' and 'q' should close only the vim canvas
-		-  Display vim on top of content being edited
-		-  If editing content, initialize vim with content in vim's "buffer"
-		-  When done with vim, pipe content from "buffer" to app
-
-
+		LOCATIONS OF INTEREST 
+			(vim_keymappings.js)
+		-line 272 "function cmdKey..."
+		-line 1064 "process command"
+		-line 1217 "onPromptKeyDown..."
+		-line 5787 "CodeMirror.fromTextArea"
+		-line 1284 "processEx"  
+				- processes the input from the prompt where I can type "w"
+		-line 3923 "ExCommandDispatcher.prototype.processCommand"			
+		-line 3931 "_processCommand"		
+		-line 5896 "match" **
+		-line 4468 "write" **
+			(codemirror.js)
+		-line 5494 "commands"
+				- here are defined how to respond to additional commands like
+				-	saving
 
 
 TREE NAVIGATION & DISPLAY:

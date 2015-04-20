@@ -23,7 +23,8 @@ $(document).ready(function() {
 	window.d3 = d3;
 	window.Handlebars = Handlebars;
 	window._ = _;
-
+	window.CodeMirror = CodeMirror;
+	
 	win.showDevTools();
 	var subject = gui.App.argv[0];
 	app = new App();	
