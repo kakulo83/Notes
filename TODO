@@ -1,3 +1,24 @@
+1 store data in html without textareas so rendering math is much easier
+
+			<div class="content text_content">
+				<p class="editable math">
+					f(x) = \int_{-\infty}^\infty
+					\hat f(\xi)\,e^{2 \pi i \xi x}
+					\,d\xi
+				</p>
+			</div>
+
+This means that if I want to edit the text/equations, I need to grab the contents of p.editable
+and send it to codemirror
+
+
+
+
+
+
+
+
+
 EMBED VIM
 
 		LOCATIONS OF INTEREST 
