@@ -1,20 +1,24 @@
-1 store data in html without textareas so rendering math is much easier
+TODO:
+Add ability to delete content (text/math/image)
+		- what happens if content that is in the middle of the page is deleted?  will other content be
+			shifted?  
+		- what happens if new content is appended in the middle of the page?  will the other 
+			content also be shifted?
 
-			<div class="content text_content">
-				<p class="editable math">
-					f(x) = \int_{-\infty}^\infty
+
+finish tree view CRUD operations in menu
+finish object view CRUD operations in menu
+add process view/controller
+
+
+
+TEX EXAMPLE EQUATIONS:
+
+			\cos (2\theta) = \cos^2 \theta - \sin^2 \theta
+
+			f(x) = \int_{-\infty}^\infty
 					\hat f(\xi)\,e^{2 \pi i \xi x}
 					\,d\xi
-				</p>
-			</div>
-
-This means that if I want to edit the text/equations, I need to grab the contents of p.editable
-and send it to codemirror
-
-
-
-
-
 
 
 

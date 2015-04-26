@@ -2,15 +2,15 @@ html {
 height: 100%;    
 }
 body {
-/*background-color: rgb(10,10,10);*/
-background: rgba(30,51,106,1);
-background: -moz-linear-gradient(-45deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);
-background: -webkit-gradient(left top, right bottom, color-stop(0%, rgba(30,51,106,1)), color-stop(100%, rgba(85,32,113,1)));
-background: -webkit-linear-gradient(-45deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);
-background: -o-linear-gradient(-45deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);
-background: -ms-linear-gradient(-45deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);
-background: linear-gradient(135deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);
-filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e336a', endColorstr='#552071', GradientType=1 );
+background-color: rgb(10,10,10);
+/*background: rgba(30,51,106,1);*/
+/*background: -moz-linear-gradient(-45deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);*/
+/*background: -webkit-gradient(left top, right bottom, color-stop(0%, rgba(30,51,106,1)), color-stop(100%, rgba(85,32,113,1)));*/
+/*background: -webkit-linear-gradient(-45deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);*/
+/*background: -o-linear-gradient(-45deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);*/
+/*background: -ms-linear-gradient(-45deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);*/
+/*background: linear-gradient(135deg, rgba(30,51,106,1) 0%, rgba(85,32,113,1) 100%);*/
+/*filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e336a', endColorstr='#552071', GradientType=1 );*/
 
 position: relative;
 min-height: 100%;    
@@ -23,6 +23,7 @@ font-size: 12px;
 min-height: 100%;
 height: auto;
 margin: 0 auto -40px;
+margin-bottom: 50px;
 color: white;
 }
 #mode-container h1 {
@@ -109,7 +110,7 @@ display: none;
 }
 
 /**************** object *******************/
-.text_content {
+.text_content, .image_content {
 border-left: solid transparent;
 padding-left: 80px;
 padding-right: 80px;
@@ -124,10 +125,12 @@ color: white;
 resize: none;
 outline: none;
 }
-.text_content.active {
+.text_content.active, .image_content.active {
 border-left: solid red;
 }
-
+img {
+max-width: 1280px;
+}
 /******************* simple vi ********************/
 #editor { display: none; }
 .editor {

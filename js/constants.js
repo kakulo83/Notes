@@ -1,5 +1,8 @@
 var PATH = "/Users/robertcarter/Documents/VIL/";
 
+
+
+
 var Mode = {
 	NORMAL:		 { toString: function() { return "NORMAL"; }, value: 0 },
 	TREE:      { toString: function() { return "TREE"; }, value: 1 },
@@ -130,6 +133,7 @@ var KeyEvent = {
 
 
 module.exports =  {
+	MODE_CONTAINER_HEIGHT: 790,
 	PATH: PATH,	
 	Mode: Mode,
 	KeyEvent: KeyEvent
