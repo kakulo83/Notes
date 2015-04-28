@@ -1,14 +1,18 @@
 TODO:
-Add ability to delete content (text/math/image)
-		- what happens if content that is in the middle of the page is deleted?  will other content be
-			shifted?  
-		- what happens if new content is appended in the middle of the page?  will the other 
-			content also be shifted?
+
+	Completely change how menu's are implemented.  Instead of "m" trigger a menu on the bottom of the window when I am in NORMAL
+	mode, mimic NERDTree's behavior.  <ctrl-n> should open a drawer to the left that shows the current Subject Tree and all Objects
+  and all Processes
+
+	Pressing "m" when this side drawer is active then opens the bottom menu with appropriate action options
+			
+	When the side drawer is not opened and I am in NORMAL mode pressing "m" should open a localized and contextual menu with
+	appropriate action options.
 
 
-finish tree view CRUD operations in menu
-finish object view CRUD operations in menu
-add process view/controller
+	finish tree view CRUD operations in menu
+	finish object view CRUD operations in menu
+	add process view/controller
 
 
 

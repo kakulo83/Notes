@@ -7,8 +7,15 @@ var State = {
 	MENU: 1,
 	IMAGE: 2,
 	VIDEO: 3,
-	VIM: 4
+	VIM: 4,
+	VISUAL_SELECT: 5,
+	LOCAL_MENU: 6
 };
+
+var SubState = {
+		
+};
+
 
 var ObjectController = function(app) { 
 	this.app = app;
@@ -42,11 +49,8 @@ ObjectController.prototype.processData = function(error, object) {
 
 		// set the rawHTML property for each content 
 		_.each(this.contents, function(content) {	
-			// TODO Fix this shit.  ALL content elements will OBVIOUSLY have the same 
-			// value for rawHTML because it's being set on the proto object!!!!
 			content.rawHTML = content.outerHTML; 
 		});
-
 		this.setCurrentContent(this.contents[0]);
 		this.renderView(object);
 	}
@@ -65,10 +69,23 @@ ObjectController.prototype.renderView = function(content) {
 		$("#mode-container").append(content);	
 	}
 	else {
-		new_text = window.document.createElement("DIV");
+		var new_title = window.document.createElement("DIV");		
+		new_title.class = "content";
+		var h3 = window.document.createElement("H3");
+		h3.id = "title";
+		h3.class = "editable";
+		h3.textContent = this.object;
+		new_title.appendChild(h3);	
+
+		var new_text = window.document.createElement("DIV");
 		new_text.className = "text_content content active"	
 		$(new_text).append("<p class='editable'>Add text</p>");
+		$("#mode-container").append(new_title);
 		$("#mode-container").append(new_text);			
+		new_text.rawHTML = new_text.outerHTML;
+
+		this.contents.push(new_text);
+		this.setCurrentContent(new_text);
 	}
 	
 	// render any math	
@@ -116,7 +133,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_M:
 				this.state = State.MENU;
 				showMenu();	
-				break;	
+				break;
 			case Constants.KeyEvent.DOM_VK_P:
 				this.app.changeMode(Constants.Mode.PROCESS);
 				break;
@@ -125,6 +142,14 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_T:
 				this.app.changeMode(Constants.Mode.TREE);	
+				break;
+			case Constants.KeyEvent.DOM_VK_V:
+				if (! e.shiftKey)	
+					return;
+				$(this.currentContent).find(".editable").addClass("highlighted");
+				this.state = State.VISUAL_SELECT;
+				
+
 				break;
 			case Constants.KeyEvent.DOM_VK_Z:
 				// Folding Initiation key
@@ -136,7 +161,6 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				// Zoom out?
 				break;
 			default:
-				console.log(String.interpolate("No handler for %@", charCode));	
 		}
 	}
 	else if (this.state === State.MENU) {
@@ -183,15 +207,12 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				hideMenu();	
 				break;
 			default:
-				console.log(String.interpolate("No handler for %@", charCode));
 		}
 	}
 	else if (this.state === State.VIM) { 
 
 	}
 	else if (this.state === State.IMAGE) {
-		console.log("Handling image insert");
-	
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_ESCAPE:
 			
@@ -199,6 +220,59 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				var uri = $("#command-prompt").val();
 				this.appendImageContent(uri);
+				break;
+		}
+	}
+	else if (this.state === State.VISUAL_SELECT) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				$(this.currentContent).find(".editable").removeClass("highlighted");
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_M:
+				showLocalMenu(this.currentContent);
+				$(this.currentContent).find(".editable").removeClass("highlighted");
+				this.state = State.LOCAL_MENU;
+				break;
+		}
+	}
+	else if (this.state === State.LOCAL_MENU) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				hideLocalMenu(this.currentContent);			
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_N:
+				// move to next option	
+				var activeMenuItem = $(".local-menu-item.active");
+				var allLocalMenuItems = $(".local-menu-item").toArray();
+				var index = $.inArray(activeMenuItem[0], allLocalMenuItems);
+
+				if (index+1 < allLocalMenuItems.length) {
+					$(activeMenuItem).removeClass("active");		
+					$(allLocalMenuItems[index+1]).addClass("active");
+				}
+				break;
+			case Constants.KeyEvent.DOM_VK_P:
+				// move to previous option
+				var activeMenuItem = $(".local-menu-item.active");
+				var allLocalMenuItems = $(".local-menu-item").toArray();
+				var index = $.inArray(activeMenuItem[0], allLocalMenuItems);
+								
+				if (index -1 >= 0) {	
+					$(activeMenuItem).removeClass("active");
+					$(allLocalMenuItems[index-1]).addClass("active");
+				}
+				break;
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				// Determine which action has been selected and execute it
+				debugger	
+				var activeMenuItem = $(".local-menu-item.active");
+
+
+
+				hideLocalMenu(this.currentContent);			
+				this.state = State.NORMAL;	
 				break;
 		}
 	}
@@ -359,6 +433,20 @@ function scrollUp(previousContent) {
 	}
 }
 
+function showLocalMenu(currentContent) {
+	var localMenuDiv = window.document.createElement("DIV");
+	localMenuDiv.className = "local-menu-container";
+
+	var localMenu = window.Handlebars.helpers.localMenu(["increase fold depth", "decrease fold depth"])	
+
+	$(localMenuDiv).append(localMenu);
+	$(currentContent).prepend(localMenuDiv);
+}
+
+function hideLocalMenu(currentContent) {
+	$(currentContent).find(".local-menu-container").remove();
+}
+
 function showCommandPrompt(placeholder) {
 	$("#command-prompt").attr("disabled", false);
 	if (placeholder) { $("#command-prompt").attr("placeholder", placeholder); }
@@ -425,5 +513,16 @@ function showMenu() {
 function hideMenu() {
 	$("#mode-menu-container").hide();
 }
+
+window.Handlebars.registerHelper("localMenu", function(items) {
+	var menu = "<ul class='local-menu'>";
+	for (var i=0; i<items.length; i++) {
+		if (i === 0)
+			menu = menu + "<li class='local-menu-item active'>" + items[i] + "</li>";
+		else 
+			menu = menu + "<li class='local-menu-item'>" + items[i] + "</li>";
+	}
+	return menu = menu + "</ul>";
+});
 
 module.exports = ObjectController;

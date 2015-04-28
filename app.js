@@ -50,7 +50,7 @@ App.prototype.init = function(subject) {
 	this.object_controller  = new ObjectController(this, window);
 	//this.process_controller = new ProcessController(this, window);
 
-	document.addEventListener("keyup", this.handleKeyPress.bind(this), false);
+	document.addEventListener("keydown", this.handleKeyPress.bind(this), false);
 	this.changeMode(Constants.Mode.TREE);
 }
 
