@@ -9,7 +9,8 @@ var State = {
 	VIDEO: 3,
 	VIM: 4,
 	VISUAL_SELECT: 5,
-	LOCAL_MENU: 6
+	LOCAL_MENU: 6,
+	TOGGLE: 7
 };
 
 var SubState = {
@@ -148,17 +149,30 @@ ObjectController.prototype.handleKeyPress = function(e) {
 					return;
 				$(this.currentContent).find(".editable").addClass("highlighted");
 				this.state = State.VISUAL_SELECT;
-				
-
 				break;
 			case Constants.KeyEvent.DOM_VK_Z:
 				// Folding Initiation key
+				this.state = State.TOGGLE;
 				break;
 			case Constants.KeyEvent.DOM_VK_ADD:
 				// Zoom in?
 				break;
 			case Constants.KeyEvent.DOM_VK_SUBTRACT:
 				// Zoom out?
+				break;
+			case Constants.KeyEvent.DOM_VK_PERIOD:
+				if (! e.shiftKey)
+					return;
+				increaseFoldDpeth(this.currentContent);
+				saveObjectData(this.contents, { "subject": this.subject, "object": this.object });			
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_COMMA:
+				if (! e.shiftKey)
+					return;
+				decreaseFoldDepth(this.currentContent);
+				saveObjectData(this.contents, { "subject": this.subject, "object": this.object });			
+				this.state = State.NORMAL;
 				break;
 			default:
 		}
@@ -266,14 +280,36 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// Determine which action has been selected and execute it
-				debugger	
 				var activeMenuItem = $(".local-menu-item.active");
-
-
-
 				hideLocalMenu(this.currentContent);			
 				this.state = State.NORMAL;	
 				break;
+		}
+	}
+	else if (this.state === State.TOGGLE) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_C:
+
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_O:
+
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_M:
+
+				this.state = State.NORMAL;
+				break;			
+			case Constants.KeyEvent.DOM_VK_R:
+
+				break;
+			case Constants.KeyEvent.DOM_VK_L:
+
+				this.state = State.NORMAL;
+				break;	
 		}
 	}
 }
@@ -403,6 +439,63 @@ ObjectController.prototype.appendMathContent = function() {
 	$(this.currentContent).after(newContentDiv);
 }
 
+function increaseFoldDpeth(currentContent) {
+	// check if content has ay depth at all
+	// if it does, then increment it further	
+	if (/depth/.test(currentContent.className) ) {
+		// get the depth level integer
+		var depthClass = currentContent.className.match(/depth-\d/)[0];
+		$(currentContent).removeClass(depthClass);
+		var newDepth = Number.parseInt(depthClass[6]) + 1;
+		var newDepthClass = String.interpolate("depth-%@", newDepth);	
+		$(currentContent).addClass(newDepthClass);	
+	} else {
+		// if it does not, then it must be implicitly at depth-0
+		// therefore my intent is to set it to depth-1
+		$(currentContent).addClass("depth-1");
+	}
+
+	// Update content's rawHTML data
+	var oldRawHTML = $(currentContent.rawHTML)[0];
+	oldRawHTML.className = currentContent.className;	
+	$(oldRawHTML).removeClass("active");
+	currentContent.rawHTML = oldRawHTML.outerHTML;
+}
+
+function decreaseFoldDepth(currentContent) {
+	if (/depth/.test(currentContent.className) ) {
+		var depthClass = currentContent.className.match(/depth-\d/)[0];
+		$(currentContent).removeClass(depthClass);
+		var newDepth = Number.parseInt(depthClass[6]) - 1;
+		if (newDepth < 0) 
+			newDepth = 0;	
+		var newDepthClass = String.interpolate("depth-%@", newDepth);	
+		$(currentContent).addClass(newDepthClass);
+
+		// update content's rawHTML data
+		var oldRawHTML = $(currentContent.rawHTML)[0];
+		oldRawHTML.className = currentContent.className;	
+		$(oldRawHTML).removeClass("active");
+		currentContent.rawHTML = oldRawHTML.outerHTML;
+	}
+}
+
+function foldAllContentToDepth(depth) {
+
+}
+
+function unfoldAllContentToDepth(depth) {
+
+}
+
+function foldContentToDepth(currentContent, depth) {
+
+}
+
+function unfoldContentToDepth(currentContent, depth) {
+
+}
+
 function scrollDown(nextContent) {
 	var boundingRect = nextContent.getBoundingClientRect();
 
@@ -469,10 +562,10 @@ function renderMath() {
 function saveObjectData(htmlContent, selection) {
 	var filePath = String.interpolate("%@%@.notes/%@.object", Constants.PATH, selection.subject, selection.object);
 
-	var title = window.document.getElementById("title");
+	//var title = window.document.getElementById("title");
 	htmlContent = $(htmlContent).toArray()
 
-	var data = title.outerHTML + "\n\n";
+	var data = "";
 	for (var i = 0; i < htmlContent.length; i++) {
 		data += htmlContent[i].rawHTML + "\n\n";	
 	}
