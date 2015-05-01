@@ -1,5 +1,47 @@
 TODO:
 
+	// insert puts new content inside div.content
+
+	// add puts a new div.content container
+
+	<div class="content depth-0">
+		<p class="text_content editable"> 
+			...
+		</p>
+
+		<p class="text_content editable depth-1">
+			...
+		</p>
+	</div>
+
+	<div class="content depth-1">
+
+	</div>
+
+
+	Why am I contemplating putting nested content?  
+		- Because my intuition tells me that by visually indenting content I am implying a
+			strutural relationship. This nested relationship should be manifested also in the 
+			underlying data structure, which should also make computation simpler
+
+		  If I should also nest data in the datastructure, then this means that as I shift content
+			I should pull it out of the DOM tree and reposition it in the DOM too
+
+
+			append content after <div class="content">	  // non nested data
+
+			insert content inside <div class="content">   // logically connected data
+
+
+
+
+
+
+
+
+
+
+
 	Completely change how menu's are implemented.  Instead of "m" trigger a menu on the bottom of the window when I am in NORMAL
 	mode, mimic NERDTree's behavior.  <ctrl-n> should open a drawer to the left that shows the current Subject Tree and all Objects
   and all Processes

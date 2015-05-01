@@ -120,6 +120,11 @@ padding-right: 80px;
 .content.depth-5 { padding-left: 480px; }
 .content.depth-6 { padding-left: 560px; }
 
+.folded-content {
+height: 5px;
+margin-bottom: 15px;
+border-bottom: dashed gray 2px;
+}
 /**************** object *******************/
 textarea.editable {
 line-height: 20px;

@@ -10,7 +10,7 @@ var State = {
 	VIM: 4,
 	VISUAL_SELECT: 5,
 	LOCAL_MENU: 6,
-	TOGGLE: 7
+	FOLDING_CONTENT: 7
 };
 
 var SubState = {
@@ -131,6 +131,11 @@ ObjectController.prototype.handleKeyPress = function(e) {
 					scrollUp(this.currentContent);
 				}
 				break;
+			case Constants.KeyEvent.DOM_VK_L:
+				$(this.currentContent).find(".folded-content").remove();
+				$(this.currentContent).children().show();
+				this.state = State.NORMAL;
+				break;
 			case Constants.KeyEvent.DOM_VK_M:
 				this.state = State.MENU;
 				showMenu();	
@@ -152,7 +157,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_Z:
 				// Folding Initiation key
-				this.state = State.TOGGLE;
+				this.state = State.FOLDING_CONTENT;
 				break;
 			case Constants.KeyEvent.DOM_VK_ADD:
 				// Zoom in?
@@ -286,17 +291,19 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 		}
 	}
-	else if (this.state === State.TOGGLE) {
+	else if (this.state === State.FOLDING_CONTENT) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_ESCAPE:
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_C:
-
+				$(this.currentContent).children().hide();
+				$(this.currentContent).prepend("<div class='folded-content'>+</div>");	
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_O:
-
+				$(this.currentContent).find(".folded-content").remove();
+				$(this.currentContent).children().show();
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
@@ -306,10 +313,6 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_R:
 
 				break;
-			case Constants.KeyEvent.DOM_VK_L:
-
-				this.state = State.NORMAL;
-				break;	
 		}
 	}
 }
@@ -446,7 +449,11 @@ function increaseFoldDpeth(currentContent) {
 		// get the depth level integer
 		var depthClass = currentContent.className.match(/depth-\d/)[0];
 		$(currentContent).removeClass(depthClass);
-		var newDepth = Number.parseInt(depthClass[6]) + 1;
+		var depth = Number.parseInt(depthClass[6]);
+		if (depth + 1 < 7)
+			var newDepth = depth + 1;		
+		else 
+			var newDepth = depth
 		var newDepthClass = String.interpolate("depth-%@", newDepth);	
 		$(currentContent).addClass(newDepthClass);	
 	} else {
