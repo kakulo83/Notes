@@ -98,6 +98,9 @@ margin: 0;
 padding: 0;
 padding-left: 5px;
 }
+input#command-prompt::before {
+content: ":";
+}
 #command-prompt:focus, #menu-prompt:focus {
 outline-width: 0;
 }
@@ -113,18 +116,26 @@ border-left: solid transparent;
 padding-left: 80px;
 padding-right: 80px;
 }
-.content.depth-1 { padding-left: 160px; }
-.content.depth-2 { padding-left: 240px; }
-.content.depth-3 { padding-left: 320px; }
-.content.depth-4 { padding-left: 400px; }
-.content.depth-5 { padding-left: 480px; }
-.content.depth-6 { padding-left: 560px; }
+
+div[data-depth="1"] { padding-left: 160px; }
+div[data-depth="2"] { padding-left: 240px; }
+div[data-depth="3"] { padding-left: 320px; }
+div[data-depth="4"] { padding-left: 400px; }
+div[data-depth="5"] { padding-left: 480px; }
+div[data-depth="6"] { padding-left: 560px; }
 
 .folded-content {
 height: 5px;
 margin-bottom: 15px;
 border-bottom: dashed gray 2px;
 }
+a.link {
+color: purple;
+}
+span.currentWord {
+color: red;
+}
+
 /**************** object *******************/
 textarea.editable {
 line-height: 20px;
@@ -162,12 +173,6 @@ padding-left: 5px;
 .local-menu-item.active {
 background-color: darkmagenta;
 }
-
-
-
-
-
-
 
 
 

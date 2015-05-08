@@ -465,7 +465,7 @@ function showCommandPrompt() {
 }
 
 function hideCommandPrompt() {
-	$("#command-prompt").text("");
+	$("#command-prompt").val("");
 	$("#command-prompt").attr("disabled", true);
 }
 

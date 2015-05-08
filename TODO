@@ -1,168 +1,50 @@
 TODO:
 
-	// insert puts new content inside div.content
 
-	// add puts a new div.content container
+ADD ABILITY TO CREATE WIKI-LINKS
 
-	<div class="content depth-0">
-		<p class="text_content editable"> 
-			...
-		</p>
+		- First modify how codemirror+vim receives input for editing/creating new text content.  If
+			all words within a <p> tag are surrounded with <span> tags, they need to be unboxed and 
+			reboxed 
 
-		<p class="text_content editable depth-1">
-			...
-		</p>
-	</div>
-
-	<div class="content depth-1">
-
-	</div>
+					<div class="text_content content" data-depth="0">
+						<p class="editable">
+							<span class="word">Appended</span> <span class="word">after</span> <span class="word">this</span> <span class="word">text</span> <span class="word">is</span> <span class="word">mathematical</span> <span class="word">text</span> <span class="word">expressed</span> <span class="word">in</span> <span class="word">TeX</span> <span class="word">format</span>.<span class="word">  
+							This</span> <span class="word">TeX</span> <span class="word">encoded</span> <span class="word">text</span> <span class="word">will</span> <span class="word">be</span> <span class="word">rendered</span> <span class="word">with</span> <span class="word">the</span> <span class="word">KaTeX</span> <span class="word">front</span>-<span class="word">side</span> <span class="word">javascript</span> <span class="word">engine</span>.
+						</p>
+					</div>
 
 
-	Why am I contemplating putting nested content?  
-		- Because my intuition tells me that by visually indenting content I am implying a
-			strutural relationship. This nested relationship should be manifested also in the 
-			underlying data structure, which should also make computation simpler
+		- add hot-keys quickly creating a link (Ctrl-l perhaps)
 
-		  If I should also nest data in the datastructure, then this means that as I shift content
-			I should pull it out of the DOM tree and reposition it in the DOM too
+		- Add vimium like mechanism for navigating to links using "f" key to show yellow
+			quicklink letters
 
-
-			append content after <div class="content">	  // non nested data
-
-			insert content inside <div class="content">   // logically connected data
-
-
-
-
-
-
-
-
-
-
-
-	Completely change how menu's are implemented.  Instead of "m" trigger a menu on the bottom of the window when I am in NORMAL
-	mode, mimic NERDTree's behavior.  <ctrl-n> should open a drawer to the left that shows the current Subject Tree and all Objects
-  and all Processes
-
-	Pressing "m" when this side drawer is active then opens the bottom menu with appropriate action options
-			
-	When the side drawer is not opened and I am in NORMAL mode pressing "m" should open a localized and contextual menu with
-	appropriate action options.
-
-
-	finish tree view CRUD operations in menu
-	finish object view CRUD operations in menu
-	add process view/controller
-
-
-
-TEX EXAMPLE EQUATIONS:
-
-			\cos (2\theta) = \cos^2 \theta - \sin^2 \theta
-
-			f(x) = \int_{-\infty}^\infty
-					\hat f(\xi)\,e^{2 \pi i \xi x}
-					\,d\xi
-
-
-
-
-EMBED VIM
-
-		LOCATIONS OF INTEREST 
-			(vim_keymappings.js)
-		-line 272 "function cmdKey..."
-		-line 1064 "process command"
-		-line 1217 "onPromptKeyDown..."
-		-line 5787 "CodeMirror.fromTextArea"
-		-line 1284 "processEx"  
-				- processes the input from the prompt where I can type "w"
-		-line 3923 "ExCommandDispatcher.prototype.processCommand"			
-		-line 3931 "_processCommand"		
-		-line 5896 "match" **
-		-line 4468 "write" **
-			(codemirror.js)
-		-line 5494 "commands"
-				- here are defined how to respond to additional commands like
-				-	saving
-
-
-TREE NAVIGATION & DISPLAY:
-		- Add ability to scroll entire tree
-
-				-http://bl.ocks.org/robschmuecker/7880033	
-				
-		- Navigation with "hjkl" keys
-				l - moves to the top of the next depth of children nodes
-				j - moves down to next sibling node
-				k - moves up to next sibling node
-				h - moves to previous depth of children/parent node
-
-		- When the tree becomes very large, add pane scrolling
-				
-		- Add hotkeys "z + m", "z+c", "z+r" to toggle
-
-
-EMBED SHELL:
-	
-		- http://stackoverflow.com/questions/29041367/embedding-terminal-in-a-node-webkit-app
-
-		- https://github.com/Gottox/node-webterm
-
-		- https://github.com/unconed/TermKit   (Already built with node-webkit)
-
-		- http://terminal.jcubic.pl/
-
-		- http://dailyjs.com/2015/01/22/terminaljs/
-
-
-D3 EXAMPLES:
-
-	DOCS:  https://github.com/mbostock/d3/wiki/API-Reference
-
-	The D3 gallery (https://github.com/mbostock/d3/wiki/Gallery) contains some of the most interesting examples that you can find online regarding D3 usage. 
-	It contains examples on different visualization charts, specific techniques, and some interesting visualization implementations in the wild, among others.
-
-	BioVisualize(http://biovisualize.github.io/d3visualization) is another D3 gallery with categorization, to help you find your desired visualization example online quickly.
-
-
-
-D3 HELP
-	
-	The D3 Google group (https://groups.google.com/ forum/?fromgroups#!forum/d3-js): This is the official user group for not just D3 but also other related libraries in its ecosystem.
-
-
-QUESTIONS:
-
-Are stateful controllers needed?  The javascript context associated with the window can already
-keep state, so then is it not sufficient to maintain that and convert all the controllers into 
-simple functions that reference the stateful app object?
-
-
-	http://www.thecssninja.com/javascript/handleevent
-
-	"People buy emotionally and justify logically"
-
-
-Structure:
-
-		Add/Move/Destroy content with "m" (menu)
+		- Add code mechanism in ObjectController to navigate to new linked Object
 		
-		Each perspectives has 
-			- Normal (navigation) mode
-			- Insertion (create content) mode
-
-- Handlebars
-		- http://stackoverflow.com/questions/26643503/handlebars-loading-external-template-files
-
-		- handlebars templates/myView.handlebars -f myView.tpl.js
-
-
-- Build the damn thing
-		- don't get to caught up in how can I use Erlang/Scheme whatever on the backend
-		- premature optimization is the root of much evil.  build it first, then optimize
+		- Add a stack structure to store history of Objects viewed so quick navigation
+			backwards can be made using <Ctrl-o> for backwards
 
 
 
+PROMPT IF FILE NEEDS SAVING
+		- if content is shifted, added, deleted, or new links embedded on the page, in short if
+			the file is modified, exiting or changing mode's should result in a prompt to save the file
+
+
+ADD ADDITIONAL QUICK-KEY NAVIGATION
+		- Shift+H, Shift+M, Shift_L should move the current content to HIGH/MIDDLE/LOW positions
+
+		- gg should set the first content as the current content, and shift the page accordingly
+
+		- G should set the last content as the current content, and shift the page accordingly
+
+
+MODIFY THE MODE-MENU
+		- (A)ppend content should be entry point to adding new content.  If "a" is pressed, a 
+			new menu should replace the current mode-menu with the type of contents that can be added:
+		
+				(t)ext
+				(i)mage
+				(v)ideo
+				(m)ath text

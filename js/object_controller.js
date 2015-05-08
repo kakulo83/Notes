@@ -10,13 +10,9 @@ var State = {
 	VIM: 4,
 	VISUAL_SELECT: 5,
 	LOCAL_MENU: 6,
-	FOLDING_CONTENT: 7
+	FOLDING_CONTENT: 7,
+	COMMANDPROMPT: 8
 };
-
-var SubState = {
-		
-};
-
 
 var ObjectController = function(app) { 
 	this.app = app;
@@ -28,7 +24,7 @@ var ObjectController = function(app) {
 
 	this.state = State.NORMAL;
 	this.contents = []; 
-
+	this.file = "";
 	this.currentContent = null;
 };
 
@@ -41,17 +37,13 @@ ObjectController.prototype.makeActive = function(selection) {
 
 ObjectController.prototype.getObjectData = function(selection) {
 	var objectPath = String.interpolate("%@%@.notes/%@.object", Constants.PATH, selection.subject, selection.object);
+	this.file = objectPath;	
 	d3.html(objectPath, this.processData.bind(this));
 }
 
 ObjectController.prototype.processData = function(error, object) {
 	if (object) {
 		this.contents = $(object).children(".content");
-
-		// set the rawHTML property for each content 
-		_.each(this.contents, function(content) {	
-			content.rawHTML = content.outerHTML; 
-		});
 		this.setCurrentContent(this.contents[0]);
 		this.renderView(object);
 	}
@@ -60,15 +52,30 @@ ObjectController.prototype.processData = function(error, object) {
 	}
 }
 
+ObjectController.prototype.updateData = function(mutationRecords) {
+	mutationRecords.forEach ( function (mutation) {
+		/*
+		if (typeof mutation.removedNodes == "object") {
+			var jq = $(mutation.removedNodes);
+			console.log (jq);
+			console.log (jq.is("span.myclass2"));
+			console.log (jq.find("span") );
+		}
+		*/
+	});
+}
+
 ObjectController.prototype.renderView = function(content) {
 	// Generate Mode Template
 	var modeTemplate = Handlebars.templates.object;
 	var data = { content: content };
 
+	// render content
 	$("#mode-container").html(modeTemplate());
 	if (content) {
 		$("#mode-container").append(content);	
 	}
+	// render empty content
 	else {
 		var new_title = window.document.createElement("DIV");		
 		new_title.class = "content";
@@ -83,21 +90,31 @@ ObjectController.prototype.renderView = function(content) {
 		$(new_text).append("<p class='editable'>Add text</p>");
 		$("#mode-container").append(new_title);
 		$("#mode-container").append(new_text);			
-		new_text.rawHTML = new_text.outerHTML;
 
 		this.contents.push(new_text);
 		this.setCurrentContent(new_text);
 	}
 	
-	// render any math	
+	// render math	
 	renderMath();
 
-	// Generate Footer Template
+	// render footer 
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
 		mode: Constants.Mode.OBJECT.toString()
 	};
 	$("footer").html(footerTemplate(footerData));
+
+	//init MutationObserver
+	var targetNodes         = $(".content");
+	var MutationObserver    = window.MutationObserver || window.WebKitMutationObserver;
+	var myObserver          = new MutationObserver (this.updateData.bind(this));
+	var obsConfig           = { childList: true, characterData: true, attributes: true, subtree: true };
+
+	//--- Add a target node to the observer. Can only add one node at a time.
+	targetNodes.each ( function () {
+			myObserver.observe (this, obsConfig);
+	} );
 }
 
 ObjectController.prototype.setCurrentContent = function(content) {
@@ -115,25 +132,66 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_J:
 				// Move down content
-				var currentIndex = $.inArray(this.currentContent, this.contents);
-				var nextContent = this.contents[currentIndex+1];
-				if (nextContent !== undefined ) {
-					this.setCurrentContent(nextContent);
-					scrollDown(this.currentContent);	
+				var index = $.inArray(this.currentContent, this.contents) + 1;
+				var nextContent = this.contents[index];
+
+				// remove current word
+				$(".active .currentWord").removeClass("currentWord");
+
+				if (nextContent !== undefined) {
+					if ( $(nextContent).is(":visible") ) {
+						this.setCurrentContent(nextContent);
+						scrollDown(this.currentContent);	
+					} else {
+						// nextContent is NOT visible, therefore keep advancing until visible content is found	
+						index = index + 1;
+						for (var i = index; i < this.contents.length; i++) {
+							if ($(this.contents[i]).is(":visible") ) {
+								this.setCurrentContent(this.contents[i]);
+								scrollDown(this.currentContent);
+								break;
+							}
+						}
+					}
 				}
 				break;
 			case Constants.KeyEvent.DOM_VK_K:
 				// Move up content 
-				var currentIndex = $.inArray(this.currentContent, this.contents);
-				var previousContent = this.contents[currentIndex-1]; 
+				var index = $.inArray(this.currentContent, this.contents) - 1;
+				var previousContent = this.contents[index]; 
+
+				// remove current word
+				$(".active .currentWord").removeClass("currentWord");
+
 				if (previousContent !== undefined ) {
-					this.setCurrentContent(previousContent);
-					scrollUp(this.currentContent);
+					if ( $(previousContent).is(":visible") ) {
+						this.setCurrentContent(previousContent);
+						scrollUp(this.currentContent);
+					} else {
+						// previousContent is NOT visible	
+						index = index - 1;
+						for (var i = index; i >= 0; i--) {
+							if ($(this.contents[i]).is(":visible") ) {
+								this.setCurrentContent(this.contents[i]);
+								scrollUp(this.currentContent);
+								break;
+							}
+						}
+					}	
 				}
 				break;
 			case Constants.KeyEvent.DOM_VK_L:
 				$(this.currentContent).find(".folded-content").remove();
 				$(this.currentContent).children().show();
+
+				var next = $.inArray(this.currentContent, this.contents) + 1;
+				var currentDepth = Number.parseInt(this.currentContent.dataset.depth);
+				for (var i = next; i < this.contents.length; i++) {
+					if ( Number.parseInt(this.contents[i].dataset.depth) >= currentDepth )
+						$(this.contents[i]).show();
+					else
+						break;
+				}
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
@@ -155,6 +213,30 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				$(this.currentContent).find(".editable").addClass("highlighted");
 				this.state = State.VISUAL_SELECT;
 				break;
+			case Constants.KeyEvent.DOM_VK_B:
+				// move backward one word within text-content	
+				if ( ! /text_content/.test(this.currentContent.className) )
+					return;
+				if ( $(this.currentContent).find("span.currentWord").length != 0) {
+					var newCurrentWord = $(".currentWord").prev();
+					$(".currentWord").removeClass("currentWord");
+					$(newCurrentWord).addClass("currentWord");
+				}
+				break;
+			case Constants.KeyEvent.DOM_VK_E:	
+				// return if content is NOT of type textContent
+				if ( ! /text_content/.test(this.currentContent.className) )
+					return;
+
+				// if it is, check if it contains a currentWord <span>
+				if ( $(this.currentContent).find("span.currentWord").length !== 0) {
+					var newCurrentWord = $(".currentWord").next();
+					$(".currentWord").removeClass("currentWord");
+					$(newCurrentWord).addClass("currentWord");
+				} else {
+					$(".active .editable span:first-child").addClass("currentWord");	
+				}
+				break;
 			case Constants.KeyEvent.DOM_VK_Z:
 				// Folding Initiation key
 				this.state = State.FOLDING_CONTENT;
@@ -169,14 +251,31 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				if (! e.shiftKey)
 					return;
 				increaseFoldDpeth(this.currentContent);
-				saveObjectData(this.contents, { "subject": this.subject, "object": this.object });			
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_COMMA:
 				if (! e.shiftKey)
 					return;
 				decreaseFoldDepth(this.currentContent);
-				saveObjectData(this.contents, { "subject": this.subject, "object": this.object });			
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_COLON:
+				this.state = State.COMMANDPROMPT;
+				e.preventDefault();
+				showCommandPrompt();
+				break;
+			default:
+		}
+	}
+	else if (this.state === State.COMMANDPROMPT) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				hideCommandPrompt();
+				this.state = State.NORMAL;
+				break;	
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				this.processCommandPrompt();				
+				hideCommandPrompt();
 				this.state = State.NORMAL;
 				break;
 			default:
@@ -201,7 +300,6 @@ ObjectController.prototype.handleKeyPress = function(e) {
 					this.contents.splice(index, 1);
 					this.setCurrentContent(this.contents[0]);
 					this.state = State.NORMAL;
-					saveObjectData(this.contents, { "subject": this.subject, "object": this.object });			
 				}	
 				break;
 			case Constants.KeyEvent.DOM_VK_E:
@@ -229,7 +327,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 		}
 	}
 	else if (this.state === State.VIM) { 
-
+		// no handlers because we want the event to bubble up to the handlers in the codeMirror js
 	}
 	else if (this.state === State.IMAGE) {
 		switch(charCode) {
@@ -297,15 +395,39 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_C:
+				// close all content from current content depth and any subsequent that are deeper
+				// until next content AT same depth as current content or lesser depth				
+
+				// hide all nested content
+				var currentDepth = Number.parseInt(this.currentContent.dataset.depth);
 				$(this.currentContent).children().hide();
 				$(this.currentContent).prepend("<div class='folded-content'>+</div>");	
+
+				// Fold all content from curentContnet, any deeper, any the same level, up until
+				// content at a lower depth number is encountered
+				var start = $.inArray(this.currentContent, this.contents) + 1;
+				for (var i = start; i < this.contents.length; i++) {
+					var nextContent = this.contents[i];
+					var nextDepth = Number.parseInt(nextContent.dataset.depth);
+					if (nextDepth < currentDepth)
+						break;	
+					$(nextContent).hide();
+				}
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_O:
-				$(this.currentContent).find(".folded-content").remove();
+	  		$(this.currentContent).find(".folded-content").remove();
 				$(this.currentContent).children().show();
+
+				var next = $.inArray(this.currentContent, this.contents) + 1;
+				var currentDepth = Number.parseInt(this.currentContent.dataset.depth);
+				for (var i = next; i < this.contents.length; i++) {
+					if ( Number.parseInt(this.contents[i].dataset.depth) >= currentDepth )
+						$(this.contents[i]).show();
+					else
+						break;
+				}
 				this.state = State.NORMAL;
-				break;
 			case Constants.KeyEvent.DOM_VK_M:
 
 				this.state = State.NORMAL;
@@ -317,6 +439,20 @@ ObjectController.prototype.handleKeyPress = function(e) {
 	}
 }
 
+ObjectController.prototype.processCommandPrompt = function() {
+	var commandArray = $("#command-prompt").val().split(" ");
+	var option = commandArray[0].toLowerCase();
+	var subjectFromCommandPrompt = commandArray[1] || "";
+	
+	switch(option) {
+		case "w":
+			this.save();
+			hideCommandPrompt();			
+			break;
+		default:			
+	}	
+}
+
 ObjectController.prototype.openVI = function() {
 	this.state = State.VIM;
 
@@ -325,48 +461,84 @@ ObjectController.prototype.openVI = function() {
 	// vim_keymappings.js:  Line 4468 is the "write" function fo vim
 	
 	// Grab editable html, replace with a temporary textarea
-	var htmlToReplace = $(this.currentContent).find(".editable")[0];
-	var tempTextArea = window.document.createElement("TEXTAREA");
-	tempTextArea.className = htmlToReplace.className; 
+	var editable = $(this.currentContent).find(".editable")[0];
 
-	var rawHTML = $($.parseHTML(this.currentContent.rawHTML)).find(".editable")[0];
-	// extract the inner paragraph html
-	var innerHTML = rawHTML.innerHTML;
-	tempTextArea.innerHTML = innerHTML;
-	$(htmlToReplace).replaceWith(tempTextArea);
+	if ( $(".active .editable").hasClass("math") ) {
+		var tempTextArea = window.document.createElement("TEXTAREA");
+		tempTextArea.className = editable.className; 
 
-	// Initialize VIM
-	this.vim = CodeMirror.fromTextArea(tempTextArea, {
-		autofocus: true,
-		lineNumbers: true,
-		keyMap: "vim",
-		showCursorWhenSelecting: true
-	});
-	CodeMirror.on(this.vim, 'vim-saving-done', this.closeVI.bind(this));
+		// grab TeX markup
+		var TeXMarkup = $(".active annotation").html();
+	
+		tempTextArea.innerHTML = TeXMarkup;
+		$(editable).replaceWith(tempTextArea);
+
+		// Initialize VIM
+		this.vim = CodeMirror.fromTextArea(tempTextArea, {
+			autofocus: true,
+			lineNumbers: true,
+			keyMap: "vim",
+			showCursorWhenSelecting: true
+		});
+		CodeMirror.on(this.vim, 'vim-saving-done', this.closeVI.bind(this));
+	}
+	else {
+		var tempTextArea = window.document.createElement("TEXTAREA");
+		tempTextArea.className = editable.className; 
+
+		tempTextArea.innerHTML = editable.textContent;
+		$(editable).replaceWith(tempTextArea);
+
+		// Initialize VIM
+		this.vim = CodeMirror.fromTextArea(tempTextArea, {
+			autofocus: true,
+			lineNumbers: true,
+			keyMap: "vim",
+			showCursorWhenSelecting: true
+		});
+		CodeMirror.on(this.vim, 'vim-saving-done', this.closeVI.bind(this));
+	}
 }
 
 ObjectController.prototype.closeVI = function(e) {
 	// get new text
 	var newText = this.vim.getValue();
 
-	// get textarea element
-	var vimTextArea = this.vim.getTextArea();
-	var classNames = vimTextArea.className;
-	// remove vim vimTextArea and set vim to null
-	this.vim.toTextArea();
+	// split the text by white space then iterate through each component.  match the component
+	// against a WORD regex expression.  If a word is present, surround it with a <span> tag.
+	// If an exclamation mark is found that belongs to the word retain it, if it does not such as
+	// a word ending with a period ex: "ending." then surround the word but leave out the 
+	// punctuation mark.  Collect as html all these <span> surrounded words and punctuations, 
+	// flatten them, and replace <p> tag's innerHTML with this flattened html.
+
+	// TODO Patch for the caase in which the text is TeX content, <span> tags shouldn't be applied
+	// 			to math equations
+
+	// Break text into word components
+	var wordComponents = newText.split(/\b/);
+
+	// Iterate through each component and if it is a word wrap it with a <span> tag	
+	var spanWrappedWords = _.map(wordComponents, function(component) {
+														if ( ! (/\b/).test(component))
+															return component;
+														var wrappedWord = window.document.createElement("SPAN");
+														wrappedWord.className = "word";
+														wrappedWord.innerHTML = component;		
+														return wrappedWord;
+													},this);
+
+	// Create new paragraph tag with span wrapped words
+	var updatedContent = window.document.createElement("P");
+	var classNames = this.vim.getTextArea().className;
+	updatedContent.className = classNames;
+	$(updatedContent).append(spanWrappedWords);
+	$(this.currentContent).html(updatedContent);		
+
+	// remove vim editor
 	this.vim = null;
 
-	var updatedContent = window.document.createElement("P");
-	updatedContent.className = classNames;
-	updatedContent.innerHTML = newText;	
-	$(vimTextArea).replaceWith(updatedContent);
 
-	// update data with new text
-	var newHTML = $(this.currentContent).clone();
-	$(newHTML).removeClass("active");
-	$(newHTML).find(".editable").text(newText);	
-	var newRawHTML = newHTML[0].outerHTML;
-	this.currentContent.rawHTML = newRawHTML;
+
 
 	// render any math
 	if (classNames.match(/math/))	{
@@ -374,8 +546,6 @@ ObjectController.prototype.closeVI = function(e) {
 	}
 	
 	this.state = State.NORMAL;
-
-	saveObjectData(this.contents, { "subject": this.subject, "object": this.object });			
 }
 
 ObjectController.prototype.editTextContent = function() {
@@ -385,12 +555,13 @@ ObjectController.prototype.editTextContent = function() {
 ObjectController.prototype.appendTextContent = function() {
 	var newContentDiv = window.document.createElement("DIV");
 	newContentDiv.className = "text_content content";
+	newContentDiv.setAttribute("data-depth", 0);
 
 	var newContentParagraph = window.document.createElement("P");	
 	newContentParagraph.className = "editable";
 	newContentParagraph.innerHTML = "Add text here";
 	newContentDiv.appendChild(newContentParagraph);
-	newContentDiv.rawHTML = newContentDiv.outerHTML;
+	
 	$(this.currentContent).after(newContentDiv);
 
 	// GET INDEX OF CURRENTCONTENT (we might be appending content in the middle of the page) SPLICE NEW CONTENT
@@ -407,26 +578,20 @@ ObjectController.prototype.appendTextContent = function() {
 }
 
 ObjectController.prototype.appendImageContent = function(uri) {
-	// cleanup command-prompt
 	hideCommandPrompt();	
-
 	var newContentDiv = window.document.createElement("DIV");
 	newContentDiv.className = "image_content content";	
+	newContentDiv.setAttribute("data-depth", 0);
 
 	var image = window.document.createElement("IMG");
 	image.src = uri;
 
 	newContentDiv.appendChild(image);		
-	newContentDiv.rawHTML = newContentDiv.outerHTML;
+
 
 	$(this.currentContent).after(newContentDiv);
-
 	this.contents.push(newContentDiv);
-
 	this.setCurrentContent(newContentDiv);
-
-	saveObjectData(this.contents, { "subject": this.subject, "object": this.object });			
-
 	this.state = State.NORMAL;
 }
 
@@ -438,56 +603,58 @@ ObjectController.prototype.appendMathContent = function() {
 	newContentParagraph.className = "editable math";
 	newContentParagraph.innerHTML = "Add TEX here";
 	newContentDiv.appendChild(newContentParagraph);
-	newContentDiv.rawHTML = newContentDiv.outerHTML;
+
 	$(this.currentContent).after(newContentDiv);
+	this.setCurrentContent(newContentDiv);
+}
+
+ObjectController.prototype.save = function() {
+	var data = "";	
+	_.each(this.contents, function(content) {
+		if ( $(content).find(".editable").hasClass("math") ) {
+			var TeX = $(content).find(".editable annotation").html(); 
+			var editable = $(content).find(".editable").clone();
+			$(editable).html(TeX);
+
+			var preRenderedContent = $(content).clone();
+			$(preRenderedContent).find(".editable").replaceWith(editable);
+			data = data + preRenderedContent[0].outerHTML + "\n";	
+		} else
+			data = data + content.outerHTML + "\n";	
+	},this);
+
+	data = data.replace(/active/, "");
+	fs.writeFile(this.file, data, function(err) {
+		if (err) throw err;
+		console.log('It\'s saved!');
+	});
 }
 
 function increaseFoldDpeth(currentContent) {
-	// check if content has ay depth at all
-	// if it does, then increment it further	
-	if (/depth/.test(currentContent.className) ) {
-		// get the depth level integer
-		var depthClass = currentContent.className.match(/depth-\d/)[0];
-		$(currentContent).removeClass(depthClass);
-		var depth = Number.parseInt(depthClass[6]);
+	var depth = Number.parseInt(currentContent.getAttribute("data-depth"));
+	if (depth) {
 		if (depth + 1 < 7)
-			var newDepth = depth + 1;		
-		else 
-			var newDepth = depth
-		var newDepthClass = String.interpolate("depth-%@", newDepth);	
-		$(currentContent).addClass(newDepthClass);	
+			depth = depth + 1;	
+		currentContent.setAttribute("data-depth", depth);
 	} else {
-		// if it does not, then it must be implicitly at depth-0
-		// therefore my intent is to set it to depth-1
-		$(currentContent).addClass("depth-1");
+		currentContent.setAttribute("data-depth", 1);
 	}
-
-	// Update content's rawHTML data
-	var oldRawHTML = $(currentContent.rawHTML)[0];
-	oldRawHTML.className = currentContent.className;	
-	$(oldRawHTML).removeClass("active");
-	currentContent.rawHTML = oldRawHTML.outerHTML;
 }
 
 function decreaseFoldDepth(currentContent) {
-	if (/depth/.test(currentContent.className) ) {
-		var depthClass = currentContent.className.match(/depth-\d/)[0];
-		$(currentContent).removeClass(depthClass);
-		var newDepth = Number.parseInt(depthClass[6]) - 1;
-		if (newDepth < 0) 
-			newDepth = 0;	
-		var newDepthClass = String.interpolate("depth-%@", newDepth);	
-		$(currentContent).addClass(newDepthClass);
-
-		// update content's rawHTML data
-		var oldRawHTML = $(currentContent.rawHTML)[0];
-		oldRawHTML.className = currentContent.className;	
-		$(oldRawHTML).removeClass("active");
-		currentContent.rawHTML = oldRawHTML.outerHTML;
+	var depth = Number.parseInt(currentContent.getAttribute("data-depth"));
+	if (depth) {
+		if (depth - 1 >= 0) 
+			depth = depth - 1;
+		currentContent.setAttribute("data-depth", depth);		
 	}
 }
 
-function foldAllContentToDepth(depth) {
+function foldAllContent() {
+	
+}
+
+function foldAllContentToDepth(curentContent) {
 
 }
 
@@ -564,23 +731,6 @@ function renderMath() {
 	_.each(mathContent, function(equation) {
 		window.katex.render(equation.innerHTML, equation);
 	});	 
-}
-
-function saveObjectData(htmlContent, selection) {
-	var filePath = String.interpolate("%@%@.notes/%@.object", Constants.PATH, selection.subject, selection.object);
-
-	//var title = window.document.getElementById("title");
-	htmlContent = $(htmlContent).toArray()
-
-	var data = "";
-	for (var i = 0; i < htmlContent.length; i++) {
-		data += htmlContent[i].rawHTML + "\n\n";	
-	}
-	
-	fs.writeFile(filePath, data, function(err) {
-		if (err) throw err;
-		// TODO Output to command-prompt that "File saved"	
-	});
 }
 
 function showMenuPrompt(prompt) {

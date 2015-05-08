@@ -1,3 +1,7 @@
+var fs = require("fs");
+var Constants = require("./constants.js");
+var Utilities = require("./utilities.js");
+
 var ProcessController = function(app) {
 	this.app = app;
 };
@@ -17,7 +21,6 @@ ProcessController.prototype.renderView = function() {
 		options: ["(a)dd process", "(m)ove process", "(d)elete process", "(c)opy process"]
 	};
 	$("footer").html(footerTemplate(footerData));
-
 }
 
 ProcessController.prototype.handleKeyPress = function(e) {
@@ -70,4 +73,4 @@ ProcessController.prototype.handleKeyPress = function(e) {
 	}
 }
 
-//module.exports = ProcessController;
+module.exports = ProcessController;
