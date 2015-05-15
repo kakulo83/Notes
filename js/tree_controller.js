@@ -1,3 +1,4 @@
+var fs = require("fs");
 var Constants = require("./constants.js");
 var Utilities = require("./utilities.js");
 
@@ -6,7 +7,10 @@ var State = {
 	MENU: 1,
 	QUICKLINK: 2,
 	COMMANDPROMPT: 3,
-	SCROLL: 4  // TODO Add a scroll mode where I can scroll the entire tree if it gets too big
+	SCROLL: 4,  // TODO Add a scroll mode where I can scroll the entire tree if it gets too big
+	MOVE_NODE: 5,
+	MOVE_ORPHAN: 6,
+	ORPHAN: 7
 };
 
 // TreeController is being referenced from app.js as a node module.  This means the javascript
@@ -26,19 +30,21 @@ var TreeController = function(app, subject, window) {
 	_ = window._;
 
 	this.chart = tree();
+	this.orphans = [];
 	this.state = State.NORMAL;
+	this.ignoreKeyboardInput = false;  // without this flag, the full range of keyboard letters wouldn't be available for setting new node names, or quicklink letters
+																		 // because letters like 'a', 'd', 'm' etc would be captured as they are also hotkeys themselves.
 	this.file = null;
-	this.subject = subject || ""; 
+	this.subject = subject || null; 
 	this.keyStrokeStack = [];
 	this.currentNode = null;
-	this.getTreeData(subject);
 };
 
 TreeController.prototype.makeActive = function() {
-	if (this.chart) 
+	if (this.chart.nodes()) //if (this.chart) 
 		this.renderView();
 	else
-		this.getTreeData();
+		this.getTreeData(this.subject);
 }
 
 TreeController.prototype.getTreeData = function(subject) {
@@ -61,6 +67,8 @@ TreeController.prototype.processData = function(error, nodes) {
 		// file and data exists
 		this.file = String.interpolate("%@%@.notes/%@.json", Constants.PATH, this.subject, this.subject); 
 		this.chart.nodes(nodes);
+		if (nodes.orphans) 
+			this.orphans = nodes.orphans;
 		this.renderView();	
 	}
 	else {
@@ -79,6 +87,10 @@ TreeController.prototype.renderView = function() {
 	};
 
 	$("#mode-container").html(modeTemplate(mainData));
+	$("#mode-container").prepend("<div id='orphans-container'><h3>Orphaned Objects</h3><ul id='orphans'></ul></div>");	
+
+	if (this.orphans.length > 0) 
+		this.renderOrphans();	
 
 	if (this.chart.nodes()) {
 		this.chart.render();
@@ -95,7 +107,7 @@ TreeController.prototype.renderView = function() {
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
 		mode: Constants.Mode.TREE.toString(),
-		options: ["(n)ew tree", "(a)dd node", "(m)ove node", "(d)elete node", "(c)opy node"]
+		options: ["(a)dd node", "(m)ove and make child to", "(d)etach node",  "(D)elete node"]
 	};
 	$("footer").html(footerTemplate(footerData));
 }
@@ -118,20 +130,58 @@ TreeController.prototype.handleKeyPress = function(e) {
 			var query = String.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 
-			// If selection exists grab
+
+			// If selection exists 
 			if ($(quicklink).length) {
-				this.state = State.NORMAL;
-				var node = $(quicklink).parent().parent();
+				// determine which quicklink was chosen, SVG <g> for tree node, or <a> for orphan
+				if( /orphan/.test(quicklink[0].className) ) {
+					this.state = State.ORPHAN;
+					this.setCurrentOrphanFromAnchorSelect(quicklink);
+				}
+				else {
+					this.state = State.NORMAL;
+					var node = $(quicklink).parent().parent();
+					this.setCurrentNodeFromQuickLinkSelect(node);	
+					this.state = State.NORMAL;
+				}
 				this.keyStrokeStack = [];
-				this.setCurrentNodeFromQuickLinkSelect(node);	
-				this.state = State.NORMAL;
 				removeYellowSelector();
 			}
 		}
-		else {
-			this.state = State.NORMAL;
-			this.keyStrokeStack = [];
-			removeYellowSelector();
+	}
+	else if (this.state === State.ORPHAN) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_J:
+				var nextOrphan = $(".orphan .circle.current").parent().next();
+				if (nextOrphan.length !== 0)
+					this.setCurrentOrphan(nextOrphan);
+				break;
+			case Constants.KeyEvent.DOM_VK_K:
+				var previousOrphan = $(".orphan .circle.current").parent().prev();
+				if (previousOrphan.length !== 0)
+					this.setCurrentOrphan(previousOrphan);
+				break;
+			case Constants.KeyEvent.DOM_VK_M:
+				showYellowSelector();	
+				this.state = State.MOVE_ORPHAN;
+				break;
+			case Constants.KeyEvent.DOM_VK_D:
+				var confirm = window.prompt("To delete this content, type 'yes'", "");
+				if (confirm.toLowerCase() === "yes") {
+					// delete node from this.chart.nodes().orphans	
+
+					this.currentNode = this.chart.nodes();
+					var query = String.interpolate(".node.%@", this.chart.nodes().id);
+					var rootNodeSVG = $(query);
+					d3.select(rootNodeSVG[0]).select("circle")
+						.attr("class", "current");
+					this.state = State.NORMAL;
+				}
+				break;	
+			case Constants.KeyEvent.DOM_VK_F:
+				this.state = State.QUICKLINK;
+				showYellowSelector();
+				break;
 		}
 	}
 	else if (this.state === State.NORMAL) {
@@ -166,10 +216,12 @@ TreeController.prototype.handleKeyPress = function(e) {
 				// Move up node
 				// navigation here is based on this.currentNode, which is relative to the application tree datastructure and NOT the gui representation 
 				var parent = this.currentNode.parent;
-				var childPosition = $.inArray(this.currentNode, parent.children);
-				if (childPosition > 0)
-					this.setCurrentNodeFromDataStructureSelect(parent.children[childPosition - 1]);
-				// TODO handle case where jumping from set of siblings to next set of siblings (cousins to the current set of siblings)
+				if (parent) {
+					var childPosition = $.inArray(this.currentNode, parent.children);
+					if (childPosition > 0)
+						this.setCurrentNodeFromDataStructureSelect(parent.children[childPosition - 1]);
+					// TODO handle case where jumping from set of siblings to next set of siblings (cousins to the current set of siblings)
+				}
 				break;
 			case Constants.KeyEvent.DOM_VK_L:
 				// Move to right node
@@ -197,7 +249,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 				this.app.changeMode(Constants.Mode.OBJECT, selection);
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
-				this.app.changeMode(Constants.Mode.PROCESS);
+				//this.app.changeMode(Constants.Mode.PROCESS);
 				break;
 			case Constants.KeyEvent.DOM_VK_R:
 				// Unfold one level
@@ -220,10 +272,10 @@ TreeController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_COLON:
 				this.state = State.COMMANDPROMPT;
+				e.preventDefault();
 				showCommandPrompt();
 				break;
 			default:
-				console.log(String.interpolate("No handler for %@", charCode));
 		}
 	}
 	else if (this.state === State.COMMANDPROMPT) {
@@ -247,29 +299,93 @@ TreeController.prototype.handleKeyPress = function(e) {
 	}
 	else if (this.state === State.MENU) {
 		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_M:
+				if (! this.ignoreKeyboardInput) {
+					this.state = State.MOVE_NODE;
+					showYellowSelector();	
+					this.ignoreKeyboardInput = true;
+				}
+				break;	
 			case Constants.KeyEvent.DOM_VK_A:
-				showMenuPrompt("Enter node name");
-				break;
-			case Constants.KeyEvent.DOM_VK_C:
-				// Copy node
+				if (! this.ignoreKeyboardInput) {
+					this.ignoreKeyboardInput = true;
+					e.preventDefault();
+					showMenuPrompt("Enter node name");
+				}
 				break;
 			case Constants.KeyEvent.DOM_VK_D:
 				// Delete node
+				if (! this.ignoreKeyboardInput) {
+					// keyboard input 
+					this.ignoreKeyboardInput = true;
+					if (e.shiftKey) {
+						var confirm = window.prompt("To delete this node, type 'yes'", "");
+						if (confirm.toLowerCase() !== "yes") 
+							this.deleteNode();
+					}
+					else {
+						var confirm = window.prompt("To detach this node, type 'yes'", "");
+						if (confirm.toLowerCase() === "yes") 
+							this.detachNode();
+					}
+					this.state = State.NORMAL;
+				}
 				break;
-			case Constants.KeyEvent.DOM_VK_N:
-				showMenuPrompt("Enter Tree name");	
-				break;	
 			case Constants.KeyEvent.DOM_VK_ESCAPE:
 				this.state = State.NORMAL;
-				hideMenu();	
+				this.ignoreKeyboardInput = false;
+				hideMenuPrompt();	
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				var name = $("#menu-prompt").val();		
-				this.addNewNode(name)
-				hideMenu();	
+				var name = $("#menu-prompt").val();
+				this.addNewNode(name);
+				this.ignoreKeyboardInput = false;
+				hideMenuPrompt();	
 				break;
 			default:
-				console.log(String.interpolate("No handler for %@", charCode));
+		}
+	}
+	else if (this.state === State.MOVE_NODE) {
+		if (charCode === Constants.KeyEvent.DOM_VK_ESCAPE) {
+			this.state = State.NORMAL;
+			this.keyStrokeStack = [];
+			removeYellowSelector();
+			hideMenuPrompt();
+		}
+		else if (_.contains([ Constants.KeyEvent.DOM_VK_A, Constants.KeyEvent.DOM_VK_C, Constants.KeyEvent.DOM_VK_D, Constants.KeyEvent.DOM_VK_E, Constants.KeyEvent.DOM_VK_F, Constants.KeyEvent.DOM_VK_G, Constants.KeyEvent.DOM_VK_H, Constants.KeyEvent.DOM_VK_J, Constants.KeyEvent.DOM_VK_K, Constants.KeyEvent.DOM_VK_L, Constants.KeyEvent.DOM_VK_M, Constants.KeyEvent.DOM_VK_P, Constants.KeyEvent.DOM_VK_S, Constants.KeyEvent.DOM_VK_W ], charCode)) {
+			var newChar = String.fromCharCode(charCode);
+			this.keyStrokeStack.push(newChar);
+			// Attempt to select node	
+			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
+			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var quicklink = $(query);
+			if ($(quicklink).length) {
+				// grab node and move it as a child to new parent
+			}
+		}
+		this.ignoreKeyboardInput = false;
+		this.state = State.NORMAL;
+	}
+	else if (this.state === State.MOVE_ORPHAN) {
+		if (charCode === Constants.KeyEvent.DOM_VK_ESCAPE) {
+			this.state = State.ORPHAN;
+			this.keyStrokeStack = [];
+			removeYellowSelector();
+		}
+		else if (_.contains([ Constants.KeyEvent.DOM_VK_A, Constants.KeyEvent.DOM_VK_C, Constants.KeyEvent.DOM_VK_D, Constants.KeyEvent.DOM_VK_E, Constants.KeyEvent.DOM_VK_F, Constants.KeyEvent.DOM_VK_G, Constants.KeyEvent.DOM_VK_H, Constants.KeyEvent.DOM_VK_J, Constants.KeyEvent.DOM_VK_K, Constants.KeyEvent.DOM_VK_L, Constants.KeyEvent.DOM_VK_M, Constants.KeyEvent.DOM_VK_P, Constants.KeyEvent.DOM_VK_S, Constants.KeyEvent.DOM_VK_W ], charCode)) {
+			var newChar = String.fromCharCode(charCode);
+			this.keyStrokeStack.push(newChar);
+			// Attempt to select node	
+			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
+			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var quicklink = $(query);
+			if ($(quicklink).length) {
+				// get the node that will become the parent
+				var parentNode = quicklink.parent().parent()[0].__data__;	
+				this.moveOrphan(parentNode);
+				this.setCurrentNodeFromQuickLinkSelect(quicklink);
+				this.state = State.NORMAL;
+			}
 		}
 	}
 }
@@ -288,6 +404,109 @@ TreeController.prototype.addNewNode = function(name) {
 		this.currentNode.children = [];
 	this.currentNode.children.push(newNode);
 	this.chart.update(this.chart.nodes());
+	// TODO Create the .object file
+}
+
+TreeController.prototype.deleteNode = function() {
+	// remove all children from tree and make orphans
+	if (this.currentNode.children || this.currentNode._children) {
+		var new_orphans = flattenTree(this.currentNode);
+		// the currentNode is being deleted so shift the array by 1
+		new_orphans.shift();
+		this.chart.nodes().orphans = this.chart.nodes().orphans.concat(new_orphans);
+		this.renderOrphans();
+	}
+
+	// delete only selected node 
+	var indexToDestroy = $.inArray(this.currentNode, this.currentNode.parent.children);
+	this.currentNode.parent.children.splice(indexToDestroy, 1);
+
+	this.currentNode.parent = null;
+	
+	// redraw the tree
+	this.chart.update(this.chart.nodes());
+
+	// make root node selected node
+	this.setCurrentNodeFromDataStructureSelect(this.chart.nodes());
+
+	hideMenuPrompt();
+}
+
+TreeController.prototype.detachNode = function() {
+	// move children of deleted node to orphan array
+	if (this.currentNode.children || this.currentNode._children) {
+		var new_orphans = flattenTree(this.currentNode);
+		this.chart.nodes().orphans = this.chart.nodes().orphans.concat(new_orphans);
+	}
+	else {
+		this.chart.nodes().orphans.push(this.currentNode);
+	}
+
+	// delete selected node from this.chart.nodes()
+	var indexToDestroy = $.inArray(this.currentNode, this.currentNode.parent.children);
+	this.currentNode.parent.children.splice(indexToDestroy, 1);
+	
+	// redraw the tree
+	this.chart.update(this.chart.nodes());
+
+	// render the orphans
+	this.renderOrphans();
+
+	// make root node selected node
+	this.setCurrentNodeFromDataStructureSelect(this.chart.nodes());
+
+	hideMenuPrompt();
+}
+
+TreeController.prototype.moveOrphan = function(parentNode) {
+	// create the new legitimate child
+	var name = $(".orphan.current .orphan-name").text();
+	var newChild = { "name": name, "parent": parentNode };
+
+	// add as new child to parent node
+	if (parentNode.children)
+		parentNode.children.push(newChild);
+	else {
+		parentNode.children = [];
+		parentNode.children.push(newChild);
+	}
+
+	// remove orphan from orphan UI 
+	$(".orphan.current").remove();
+
+	// remove orphan from this.chart().nodes().orphans
+	var orphanIndex = 0;		
+	for (var i=0; i<this.chart.nodes().orphans.length; i++) {
+		if (this.chart.nodes().orphans[i].name == name) {
+			orphanIndex = i;
+			break;	
+		}	
+	}
+
+	this.chart.nodes().orphans.splice(orphanIndex, 1);
+
+	this.ignoreKeyboardInput = false;	
+	this.keyStrokeStack = [];
+	removeYellowSelector();	
+	this.chart.update(this.chart.nodes());
+}
+
+TreeController.prototype.renderOrphans = function() {
+	$("#orphans").html("");
+
+	_.each(this.chart.nodes().orphans, function(orphan) {		
+		var orphanListItem = window.document.createElement("LI");
+		orphanListItem.className = "orphan";	
+			
+		var circleSpan = window.document.createElement("SPAN");
+		circleSpan.className = "circle";
+		var orphanName = window.document.createElement("SPAN");
+		orphanName.className = "orphan-name";
+		orphanName.innerHTML = orphan.name;
+		$(orphanListItem).append(circleSpan);
+		$(orphanListItem).append(orphanName);
+		$("#orphans").append(orphanListItem);
+	}, this);
 }
 
 TreeController.prototype.getSVGFromNode = function(node) {
@@ -295,24 +514,7 @@ TreeController.prototype.getSVGFromNode = function(node) {
 }
 
 TreeController.prototype.getNodeFromSVG = function(svgNode) {
-	// perform breath first search
-	var id = parseInt( $(svgNode).attr("class").split(" ")[1] );
-	var nodes = this.chart.nodes();
-	var queue = [nodes];
-	queue = queue.concat(nodes.children);
-
-	while (queue.length > 0) {
-		// check if node matches
-		var node = queue.shift();
-		if (node.id === id)
-			return node;
-		else {
-			// if not and node has children, push them onto the queue 
-			if (node.children)
-				queue = queue.concat(node.children);
-		}
-	}
-								
+	return $(svgNode)[0].__data__;	
 	throw new Error("No matching nodes");	
 }
 
@@ -358,84 +560,98 @@ TreeController.prototype.setCurrentNodeFromQuickLinkSelect = function(svgNode) {
 
 	this.currentNode = this.getNodeFromSVG(svgNode);
 	
-	// remove class "current" on current graphical representation of a node
+	// remove class "current" on current node/orphan
 	$("circle.current").attr("class", "");
+	$(".orphan .circle").removeClass("current");
 
 	// add class "current" on the new current graphical representation of the node
 	d3.select(svgNode[0]).select("circle")
 				.attr("class", "current");
 }
 
+TreeController.prototype.setCurrentOrphan = function(currentOrphan) {
+	$(".orphan.current .circle.current").removeClass("current");
+	$(".orphan.current").removeClass("current");
+	$(currentOrphan).addClass("current");
+	$(currentOrphan).find(".circle").addClass("current");
+}
+
+TreeController.prototype.setCurrentOrphanFromAnchorSelect = function(anchor) {
+	$("circle.current").attr("class", "");	
+	$(".quicklink.orphan").siblings(".circle").removeClass("current");
+	$(anchor).parent().addClass("current");
+	$(anchor).siblings(".circle").addClass("current");
+}
+
 TreeController.prototype.processCommandPrompt = function() {
 	// options 'w' write, 'x' write and close
 	var commandArray = $("#command-prompt").val().split(" ");
 	var option = commandArray[0].toLowerCase();
-	var subjectFromCommandPrompt = commandArray[1] || "";
-	var directory  = "";
-	var file = "";
+	var subjectFromCommandPrompt = commandArray[1] || null;
 
-	if (!subjectFromCommandPrompt && !this.subject) {
-		throw new Error("No file name");
-	}
+	// desired behavior.  Regardless of whether this.subject is defined, IF a command line supplied subject
+	// is given, the subject.tree file shall be written
 
-	var directory = subjectFromCommandPrompt ?  (Constants.PATH + subjectFromCommandPrompt + ".notes/") : (Constants.PATH + this.subject + ".notes/");
-	var file = subjectFromCommandPrompt ? (directory + subjectFromCommandPrompt + ".json") : (directory + this.subject + ".json");
+				// case 1   No command line subject given.  Check if this.subject is was given.  If it was, write to that
 
-	// If app was called with subject, check this.file
+				// case 2   this.subject is defined, BUT a command line subject was given.  If the directory doesn't exist
+				// 					create it and the subject.tree file 
+
 	switch(option) {
 		case "w":
-			// 'w' was invoked with a subject, need to check if directory exists or has to be created 
-			if (subjectFromCommandPrompt !== "") {
-				this.subject = subjectFromCommandPrompt;
-				// check if subject.notes directory exists
-				if (fs.existsSync(directory)) {
-					// directory exists, writing/overwriting to subject file
-					writeToFile(file, this.chart.nodes());
-				} else {
-					// directory does not exist.  Creating directory then writing to file
-					fs.mkdirSync(directory);
-					writeToFile(file, this.chart.nodes());
-				}	
-			}
-			else {
-				// 'w' without subject but app was invoked with a subject that is a real file
-				if (this.file !== null)	{
-					writeToFile(file, this.chart.nodes() );
-				} 
-				// 'w' without subject but app was invoked with a subject that is yet to be written
-			  else if (this.subject !== "") {
-					if (fs.existsSync(directory)) {
-						// directory exists, writing new file
-						writeToFile(file, this.chart.nodes());
-					} else {	
-						// directory does not exist.  Creating directory then writing new file
-						fs.mkdirSync(directory);		
+			if (subjectFromCommandPrompt) {
+				var directoryPath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/", subjectFromCommandPrompt);
+	
+				// check if the directory exists			
+				fs.realpath(directoryPath, function(err, resolvedPath) {
+					// directory exists; write to it
+					if (!err) {
+						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subjectFromCommandPrompt, subjectFromCommandPrompt);
 						writeToFile(file, this.chart.nodes());
 					}
-				}
-				else {
-					throw new Error("No file name");
-				}
+					// directory nonexistant;  create it first then write to it
+					else {
+						var directoryPath = arguments[0];
+						fs.mkdirSync(directoryPath);
+						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subjectFromCommandPrompt, subjectFromCommandPrompt);
+						writeToFile(filePath, this.chart.nodes());
+					}
+				}.bind(this, directoryPath, subjectFromCommandPrompt));
+
+				this.subject = subjectFromCommandPrompt;			
 			}
-			break;
-		case "x":
-			if (subjectFromCommandPrompt !== "") {
-				var file = Constants.PATH	+ subject + ".notes" + subject + ".json";
-				writeToFile(file, this.chart.nodes());
-				gui.App.quit();
+			else if (this.subject) {
+				var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", this.subject, this.subject);
+				writeToFile(filePath, this.chart.nodes());
 			}
 			else {
-				if (this.file !== "") {
-					writeToFile(file, this.chart.nodes());
-					gui.App.quit();	
-				}
-				else
-					throw new Error("No file name");
+				// this.subject AND subjectFromCommandPrompt are null
+				//
+				// show warning
 			}
 			break;
-		default:
-			throw new Error("Unknown command");
-	}	
+	}
+}
+
+function flattenTree(node) {
+	var flatArray = [];
+	var stack = [];
+	stack.push(node);
+
+	// simple breadth first traversal
+	while (stack.length > 0) {	
+		var currentNode = stack.pop();			
+		if (currentNode.children) {
+			for(var i=0; i<currentNode.children.length; i++) {
+				stack.push(currentNode.children[i]);			
+			}	
+		}
+		var orphan = { };
+		orphan.name = currentNode.name;
+		orphan.parent = null;
+		flatArray.push(orphan);
+	}
+	return flatArray;
 }
 
 function writeToFile(file, object) {
@@ -448,14 +664,14 @@ function showMenu() {
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
 		mode: Constants.Mode.TREE.toString(),
-		options: ["(N)ew Tree", "(a)dd node", "(m)ove node", "(d)elete node", "(c)opy node"]
+		options: ["(a)dd node", "(m)ove and make child to", "(d)etach node",  "(D)elete node"]
 	};
 	$("footer").html(footerTemplate(footerData));
 	$("#mode-menu-container").show();
 	$("#mode-menu").css("visibility", "visible");
 }
 
-function hideMenu() {
+function hideMenuPrompt() {
 	$("#mode-menu-container").hide();
 }
 
@@ -469,15 +685,15 @@ function hideCommandPrompt() {
 	$("#command-prompt").attr("disabled", true);
 }
 
-function showMenuPrompt(prompt) {
+function showMenuPrompt(hint) {
+	$("#menu-prompt-hint").text(hint);
 	$("#mode-menu").css("visibility", "hidden");
 	$("#menu-prompt").prop("disabled", false);
-	$("#menu-prompt").attr("placeholder", "");
 	$("#menu-prompt").focus();
+	$("#menu-prompt").attr("value", "");
 }
 
 function showYellowSelector() {
-	// Clear all quicklinks
 	$(".quicklink-container").remove();	
 
 	// Reattach quicklinks
@@ -490,16 +706,30 @@ function showYellowSelector() {
 			.attr("height",18)
 			.append("xhtml:a")
 				.attr("class", function(d, i) {
-					// TODO clean this shit up, do I really need to insert html here?  Can't SVG elements be used instead?
+					// TODO clean this shit up, do I really need to insert html here?  Can't an SVG elements be used instead?
 					return "quicklink " + i + " " + Utilities.stringNumberToHintString(i);
 				})
 				.text(function (d, i) {
 					return Utilities.stringNumberToHintString(i);
 				});
- }
+
+	// Highlight any possible orphans
+	var orphanIndex = nodes[0].length;	
+	var orphans = $(".orphan").toArray();
+
+	for (var i = orphanIndex; i < orphans.length + orphanIndex; i++) {
+		var quicklink = window.document.createElement("A");
+		var hint = Utilities.stringNumberToHintString(i);
+		quicklink.innerHTML = hint;
+		// TODO Add link hint as part of anchor name too
+		quicklink.className = "quicklink orphan " + hint;
+		$(orphans[i - orphanIndex]).prepend(quicklink);
+	}
+}
 
 function removeYellowSelector() {
 	d3.selectAll(".quicklink").classed({"hide": true});
+	$(".quicklink.orphan").remove();
 }
 
 function tree() {

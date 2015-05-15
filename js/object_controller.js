@@ -4,15 +4,22 @@ var Utilities = require("./utilities.js");
 
 var State = {
 	NORMAL: 0,
-	MENU: 1,
+	MAIN_MENU: 1,
 	IMAGE: 2,
 	VIDEO: 3,
 	VIM: 4,
 	VISUAL_SELECT: 5,
-	LOCAL_MENU: 6,
-	FOLDING_CONTENT: 7,
-	COMMANDPROMPT: 8
+	WORD_SELECT: 6,
+	LOCAL_MENU: 7,
+	FOLDING_CONTENT: 8,
+	COMMANDPROMPT: 9
 };
+
+var Menu = {
+	NORMAL: 0,
+	VISUAL_SELECT: 1,
+	WORD: 2
+}
 
 var ObjectController = function(app) { 
 	this.app = app;
@@ -127,75 +134,38 @@ ObjectController.prototype.handleKeyPress = function(e) {
 	var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
 	if (this.state === State.NORMAL) {
 		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_F:
+				// show links on page
+				break;
 			case Constants.KeyEvent.DOM_VK_I:
 				// Insert object 
 				break;
 			case Constants.KeyEvent.DOM_VK_J:
 				// Move down content
-				var index = $.inArray(this.currentContent, this.contents) + 1;
-				var nextContent = this.contents[index];
-
-				// remove current word
-				$(".active .currentWord").removeClass("currentWord");
-
-				if (nextContent !== undefined) {
-					if ( $(nextContent).is(":visible") ) {
-						this.setCurrentContent(nextContent);
-						scrollDown(this.currentContent);	
-					} else {
-						// nextContent is NOT visible, therefore keep advancing until visible content is found	
-						index = index + 1;
-						for (var i = index; i < this.contents.length; i++) {
-							if ($(this.contents[i]).is(":visible") ) {
-								this.setCurrentContent(this.contents[i]);
-								scrollDown(this.currentContent);
-								break;
-							}
-						}
-					}
-				}
+				this.moveDownContent();
 				break;
 			case Constants.KeyEvent.DOM_VK_K:
 				// Move up content 
-				var index = $.inArray(this.currentContent, this.contents) - 1;
-				var previousContent = this.contents[index]; 
-
-				// remove current word
-				$(".active .currentWord").removeClass("currentWord");
-
-				if (previousContent !== undefined ) {
-					if ( $(previousContent).is(":visible") ) {
-						this.setCurrentContent(previousContent);
-						scrollUp(this.currentContent);
-					} else {
-						// previousContent is NOT visible	
-						index = index - 1;
-						for (var i = index; i >= 0; i--) {
-							if ($(this.contents[i]).is(":visible") ) {
-								this.setCurrentContent(this.contents[i]);
-								scrollUp(this.currentContent);
-								break;
-							}
-						}
-					}	
-				}
+				this.moveUpContent();
 				break;
 			case Constants.KeyEvent.DOM_VK_L:
-				$(this.currentContent).find(".folded-content").remove();
-				$(this.currentContent).children().show();
+				// toggle open hidden content
+				if ( $(this.currentContent).find(".folded-content").length !== 0) {
+					$(this.currentContent).find(".folded-content").remove();
+					$(this.currentContent).children().show();
 
-				var next = $.inArray(this.currentContent, this.contents) + 1;
-				var currentDepth = Number.parseInt(this.currentContent.dataset.depth);
-				for (var i = next; i < this.contents.length; i++) {
-					if ( Number.parseInt(this.contents[i].dataset.depth) >= currentDepth )
-						$(this.contents[i]).show();
-					else
-						break;
+					var next = $.inArray(this.currentContent, this.contents) + 1;
+					var currentDepth = Number.parseInt(this.currentContent.dataset.depth);
+					for (var i = next; i < this.contents.length; i++) {
+						if ( Number.parseInt(this.contents[i].dataset.depth) >= currentDepth )
+							$(this.contents[i]).show();
+						else
+							break;
+					}
 				}
-				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
-				this.state = State.MENU;
+				this.state = State.MAIN_MENU;
 				showMenu();	
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
@@ -208,33 +178,31 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				this.app.changeMode(Constants.Mode.TREE);	
 				break;
 			case Constants.KeyEvent.DOM_VK_V:
-				if (! e.shiftKey)	
-					return;
+				if (! e.shiftKey)	{ return; }
 				$(this.currentContent).find(".editable").addClass("highlighted");
 				this.state = State.VISUAL_SELECT;
 				break;
-			case Constants.KeyEvent.DOM_VK_B:
+			case Constants.KeyEvent.DOM_VK_B:	
 				// move backward one word within text-content	
-				if ( ! /text_content/.test(this.currentContent.className) )
-					return;
 				if ( $(this.currentContent).find("span.currentWord").length != 0) {
 					var newCurrentWord = $(".currentWord").prev();
 					$(".currentWord").removeClass("currentWord");
 					$(newCurrentWord).addClass("currentWord");
 				}
-				break;
+				break;	
 			case Constants.KeyEvent.DOM_VK_E:	
 				// return if content is NOT of type textContent
 				if ( ! /text_content/.test(this.currentContent.className) )
 					return;
-
-				// if it is, check if it contains a currentWord <span>
+				// check if there already exists a highlighted word
 				if ( $(this.currentContent).find("span.currentWord").length !== 0) {
 					var newCurrentWord = $(".currentWord").next();
 					$(".currentWord").removeClass("currentWord");
 					$(newCurrentWord).addClass("currentWord");
-				} else {
+				} 
+				else {	
 					$(".active .editable span:first-child").addClass("currentWord");	
+					this.state = State.WORD_SELECT;
 				}
 				break;
 			case Constants.KeyEvent.DOM_VK_Z:
@@ -281,7 +249,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			default:
 		}
 	}
-	else if (this.state === State.MENU) {
+	else if (this.state === State.MAIN_MENU) {
 		//var vimWindow = window.open("vim.html", "_blank", 'screenX=0,screenY=0,width=800,height=600'); 
 		//this.state = State.VIM;
 		//this.openVI();					
@@ -343,49 +311,77 @@ ObjectController.prototype.handleKeyPress = function(e) {
 	else if (this.state === State.VISUAL_SELECT) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				hideLocalMenu(this.currentContent);			
 				$(this.currentContent).find(".editable").removeClass("highlighted");
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
-				showLocalMenu(this.currentContent);
-				$(this.currentContent).find(".editable").removeClass("highlighted");
-				this.state = State.LOCAL_MENU;
-				break;
-		}
-	}
-	else if (this.state === State.LOCAL_MENU) {
-		switch(charCode) {
-			case Constants.KeyEvent.DOM_VK_ESCAPE:
-				hideLocalMenu(this.currentContent);			
-				this.state = State.NORMAL;
+				this.showVisualSelectMenu();
 				break;
 			case Constants.KeyEvent.DOM_VK_N:
-				// move to next option	
-				var activeMenuItem = $(".local-menu-item.active");
-				var allLocalMenuItems = $(".local-menu-item").toArray();
-				var index = $.inArray(activeMenuItem[0], allLocalMenuItems);
-
-				if (index+1 < allLocalMenuItems.length) {
-					$(activeMenuItem).removeClass("active");		
-					$(allLocalMenuItems[index+1]).addClass("active");
-				}
+				nextMenuItem();
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
-				// move to previous option
-				var activeMenuItem = $(".local-menu-item.active");
-				var allLocalMenuItems = $(".local-menu-item").toArray();
-				var index = $.inArray(activeMenuItem[0], allLocalMenuItems);
-								
-				if (index -1 >= 0) {	
-					$(activeMenuItem).removeClass("active");
-					$(allLocalMenuItems[index-1]).addClass("active");
-				}
+				previousMenuItem();
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// Determine which action has been selected and execute it
 				var activeMenuItem = $(".local-menu-item.active");
 				hideLocalMenu(this.currentContent);			
+				$(this.currentContent).find(".editable").removeClass("highlighted");
 				this.state = State.NORMAL;	
+				break;
+
+				break;
+		}
+	}
+	else if (this.state === State.WORD_SELECT) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_N:
+				nextMenuItem();
+				break;
+			case Constants.KeyEvent.DOM_VK_P:
+				previousMenuItem();
+				break;
+			case Constants.KeyEvent.DOM_VK_B:	
+				// move backward one word within text-content	
+				if ( $(this.currentContent).find("span.currentWord").length != 0) {
+					var newCurrentWord = $(".currentWord").prev();
+					$(".currentWord").removeClass("currentWord");
+					$(newCurrentWord).addClass("currentWord");
+				}
+				break;	
+			case Constants.KeyEvent.DOM_VK_E:	
+				// if it is, check if it contains a currentWord <span>
+				if ( $(this.currentContent).find("span.currentWord").length !== 0) {
+					var newCurrentWord = $(".currentWord").next();
+					$(".currentWord").removeClass("currentWord");
+					$(newCurrentWord).addClass("currentWord");
+				} 
+				break;
+			case Constants.KeyEvent.DOM_VK_J:
+				this.state = State.NORMAL;
+				this.moveDownContent();
+				break;
+			case Constants.KeyEvent.DOM_VK_K:
+				this.state = State.NORMAL;
+				this.moveUpContent();
+				break;
+			case Constants.KeyEvent.DOM_VK_M:
+				this.showCurrentWordMenu();
+				break;
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				if ($(this.currentContent).find(".local-menu-container").length !== 0) {
+					hideLocalMenu(this.currentContent);			
+				}
+				else if ($(this.currentContent).find("span.currentWord").length !== 0) {
+					$(".currentWord").removeClass("currentWord");
+					$(this.currentContent).find(".editable").removeClass("highlighted");
+					this.state = State.NORMAL;
+				}
+				break;
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				// handle selected item
 				break;
 		}
 	}
@@ -429,11 +425,8 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				}
 				this.state = State.NORMAL;
 			case Constants.KeyEvent.DOM_VK_M:
-
-				this.state = State.NORMAL;
 				break;			
 			case Constants.KeyEvent.DOM_VK_R:
-
 				break;
 		}
 	}
@@ -451,6 +444,23 @@ ObjectController.prototype.processCommandPrompt = function() {
 			break;
 		default:			
 	}	
+}
+
+ObjectController.prototype.showVisualSelectMenu = function() {
+	var localMenuDiv = window.document.createElement("DIV");
+	localMenuDiv.className = "local-menu-container";
+	var localMenu = window.Handlebars.helpers.localMenu(["visual menu item1", "change me in line 732"]);
+	$(localMenuDiv).append(localMenu);
+	$(this.currentContent).prepend(localMenuDiv);
+}
+
+ObjectController.prototype.showCurrentWordMenu = function() {
+	var currentWord = $(".currentWord")[0];
+	var localMenuDiv = window.document.createElement("DIV");
+	localMenuDiv.className = "local-menu-container link-targets";
+	var localMenu = window.Handlebars.helpers.localMenu(["create in-page anchor", "create link"]);
+	$(localMenuDiv).append(localMenu);
+	$(currentWord).append(localMenuDiv);
 }
 
 ObjectController.prototype.openVI = function() {
@@ -608,6 +618,56 @@ ObjectController.prototype.appendMathContent = function() {
 	this.setCurrentContent(newContentDiv);
 }
 
+ObjectController.prototype.moveDownContent = function() {
+	var index = $.inArray(this.currentContent, this.contents) + 1;
+	var nextContent = this.contents[index];
+
+	// remove current word
+	$(".active .currentWord").removeClass("currentWord");
+
+	if (nextContent !== undefined) {
+		if ( $(nextContent).is(":visible") ) {
+			this.setCurrentContent(nextContent);
+			scrollDown(this.currentContent);	
+		} else {
+			// nextContent is NOT visible, therefore keep advancing until visible content is found	
+			index = index + 1;
+			for (var i = index; i < this.contents.length; i++) {
+				if ($(this.contents[i]).is(":visible") ) {
+					this.setCurrentContent(this.contents[i]);
+					scrollDown(this.currentContent);
+					break;
+				}
+			}
+		}
+	}
+}
+
+ObjectController.prototype.moveUpContent = function() {
+	var index = $.inArray(this.currentContent, this.contents) - 1;
+	var previousContent = this.contents[index]; 
+
+	// remove current word
+	$(".active .currentWord").removeClass("currentWord");
+
+	if (previousContent !== undefined ) {
+		if ( $(previousContent).is(":visible") ) {
+			this.setCurrentContent(previousContent);
+			scrollUp(this.currentContent);
+		} else {
+			// previousContent is NOT visible	
+			index = index - 1;
+			for (var i = index; i >= 0; i--) {
+				if ($(this.contents[i]).is(":visible") ) {
+					this.setCurrentContent(this.contents[i]);
+					scrollUp(this.currentContent);
+					break;
+				}
+			}
+		}	
+	}
+}
+
 ObjectController.prototype.save = function() {
 	var data = "";	
 	_.each(this.contents, function(content) {
@@ -628,6 +688,28 @@ ObjectController.prototype.save = function() {
 		if (err) throw err;
 		console.log('It\'s saved!');
 	});
+}
+
+function nextMenuItem() {
+	var activeMenuItem = $(".local-menu-item.active");
+	var allLocalMenuItems = $(".local-menu-item").toArray();
+	var index = $.inArray(activeMenuItem[0], allLocalMenuItems);
+
+	if (index+1 < allLocalMenuItems.length) {
+		$(activeMenuItem).removeClass("active");		
+		$(allLocalMenuItems[index+1]).addClass("active");
+	}
+}
+
+function previousMenuItem() {
+	var activeMenuItem = $(".local-menu-item.active");
+	var allLocalMenuItems = $(".local-menu-item").toArray();
+	var index = $.inArray(activeMenuItem[0], allLocalMenuItems);
+					
+	if (index -1 >= 0) {	
+		$(activeMenuItem).removeClass("active");
+		$(allLocalMenuItems[index-1]).addClass("active");
+	}
 }
 
 function increaseFoldDpeth(currentContent) {
@@ -698,16 +780,6 @@ function scrollUp(previousContent) {
 		var delta = boundingRect.top;
 		window.scrollBy(0, delta);
 	}
-}
-
-function showLocalMenu(currentContent) {
-	var localMenuDiv = window.document.createElement("DIV");
-	localMenuDiv.className = "local-menu-container";
-
-	var localMenu = window.Handlebars.helpers.localMenu(["increase fold depth", "decrease fold depth"])	
-
-	$(localMenuDiv).append(localMenu);
-	$(currentContent).prepend(localMenuDiv);
 }
 
 function hideLocalMenu(currentContent) {

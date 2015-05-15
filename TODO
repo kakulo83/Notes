@@ -1,29 +1,47 @@
 TODO:
 
 
+ADD ABILITY TO MOVE ORPHANED OBJECTS ONTO TREE
+
+		- replace this.orphans array, instead use the already existing key in
+			this.chart.nodes().orphans
+
+		- hide orphaned pane if there are no more orphans
+
+		- reattach orphans onto the tree using quicklink mechanism (after 'm' is pressed, 
+			display all quicklink hints.  Keying in the hint moves the orphan to that node as a child)
+
 ADD ABILITY TO CREATE WIKI-LINKS
 
-		- First modify how codemirror+vim receives input for editing/creating new text content.  If
-			all words within a <p> tag are surrounded with <span> tags, they need to be unboxed and 
-			reboxed 
+		- add hot-keys to quickly create a link to another Object-page (Ctrl-l perhaps)
 
-					<div class="text_content content" data-depth="0">
-						<p class="editable">
-							<span class="word">Appended</span> <span class="word">after</span> <span class="word">this</span> <span class="word">text</span> <span class="word">is</span> <span class="word">mathematical</span> <span class="word">text</span> <span class="word">expressed</span> <span class="word">in</span> <span class="word">TeX</span> <span class="word">format</span>.<span class="word">  
-							This</span> <span class="word">TeX</span> <span class="word">encoded</span> <span class="word">text</span> <span class="word">will</span> <span class="word">be</span> <span class="word">rendered</span> <span class="word">with</span> <span class="word">the</span> <span class="word">KaTeX</span> <span class="word">front</span>-<span class="word">side</span> <span class="word">javascript</span> <span class="word">engine</span>.
-						</p>
-					</div>
-
-
-		- add hot-keys quickly creating a link (Ctrl-l perhaps)
+		- add hot-keys to quickly create a linkable in-page anchor (Ctrl-a perhaps)
 
 		- Add vimium like mechanism for navigating to links using "f" key to show yellow
 			quicklink letters
+
+						- pressing uppercase "F" and navigating to the link will Pop 
+							open a new Window with the content
+
+						- pressing lowercase "f" and navigating to the link will open 
+							the content in the same Window
 
 		- Add code mechanism in ObjectController to navigate to new linked Object
 		
 		- Add a stack structure to store history of Objects viewed so quick navigation
 			backwards can be made using <Ctrl-o> for backwards
+
+
+PRESERVER TEXT CONTENT FORMAT
+
+		- Use <pre> tag instead of the <p> tag
+
+
+SYNCRHONIZE TREE MODE NODES WITH OBJECT FILES
+
+		- Add prompt when I try to delete a tree node, the implication being that the corresponding
+			node.object file will be deleted	
+		
 
 
 

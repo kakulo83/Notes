@@ -72,9 +72,16 @@ App.prototype.changeMode = function(mode, selection) {
 
 App.prototype.handleKeyPress = function(e) {
 	e = e || window.event;
-  //var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
+  var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
 	//console.log("Character typed: " + String.fromCharCode(charCode));
 	//console.log("Character code: " + charCode);
+
+	/* TESTING
+	if (charCode === Constants.KeyEvent.DOM_VK_T) {
+		this.changeMode(Constants.Mode.TREE);
+		this.tree_controller.makeActive();
+	}
+	*/
 
 	switch(this.getMode()) {
 		case Constants.Mode.TREE:

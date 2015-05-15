@@ -11,47 +11,47 @@
         "force_download": false, 
         "linux-x64": false
     }, 
-    "js-flags": "", 
-    "name": "VILearn", 
-    "single-instance": true, 
-    "nodejs": true, 
+    "main": "index.html", 
     "description": "", 
-    "additional_trust_anchors": "", 
+    "nodejs": true, 
     "user-agent": "", 
+    "additional_trust_anchors": "", 
+    "single-instance": true, 
     "inject-js-end": "", 
-    "webkit": {
-        "page-cache": false, 
-        "java": false, 
-        "plugin": false
-    }, 
+    "keywords": [
+        "notes", 
+        "node", 
+        "webkit"
+    ], 
     "window": {
         "fullscreen": false, 
         "resizable": false, 
         "title": "notes", 
         "always-on-top": false, 
         "frame": true, 
-        "visible": true, 
         "height": 820, 
-        "exe_icon": "", 
-        "width": 1440, 
+        "exe_icon": "512x512.png", 
+        "visible": true, 
         "as_desktop": false, 
+        "toolbar": true, 
         "position": "", 
         "show_in_taskbar": true, 
-        "mac_icon": "", 
+        "mac_icon": "256x256.png", 
+        "width": 1440, 
         "transparent": false, 
-        "toolbar": true, 
-        "icon": ""
+        "icon": "assets/16x16.png"
     }, 
     "version": "0.1.0", 
     "snapshot": "", 
     "node-main": "", 
-    "keywords": [
-        "notes", 
-        "node", 
-        "webkit"
-    ], 
+    "webkit": {
+        "page-cache": false, 
+        "java": false, 
+        "plugin": false
+    }, 
     "inject-js-start": "", 
     "node-remote": "", 
-    "main": "index.html", 
-    "chromium-args": ""
+    "js-flags": "", 
+    "chromium-args": "", 
+    "name": "VILearn"
 }

@@ -19,11 +19,36 @@ String.interpolate = function () {
 };
 
 JSON.circularStringify = function(object) {
+	/* ORIGINAL
 	return JSON.stringify(object, function(key, value) {
 		if (key == 'parent' || key == 'x0' || key == 'y0' || key == 'depth' || key == 'x' || key == 'y' || key == 'id' || key == 'size') {
 			 return value.id;
 		}
-		else { 
+		else {
+			return value; 
+		}
+	});
+	*/
+
+	/*
+	var cache = [];
+	return JSON.stringify(object, function(key, value) {
+		if (typeof value === 'object' && value !== null) {
+        if ( (cache.indexOf(value) !== -1) || key == 'parent' || key == 'x0' || key == 'y0' || key == 'depth' || key == 'x' || key == 'y' || key == 'id' || key == 'size') {
+          // Circular reference found, discard key
+          return;
+        } 
+        // Store value in our collection
+        cache.push(value);
+    }
+    return value;
+	});
+	*/
+	return JSON.stringify(object, function(key, value) {
+		if (key == 'parent' || key == 'x0' || key == 'y0' || key == 'depth' || key == 'x' || key == 'y' || key == 'id' || key == 'size') {
+			 return;
+		}
+		else {
 			return value; 
 		}
 	});

@@ -13,6 +13,6 @@ templates['footer'] = template({"1":function(depth0,helpers,partials,data) {
     + alias3(((helper = (helper = helpers.mode || (depth0 != null ? depth0.mode : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"mode","hash":{},"data":data}) : helper)))
     + "</span><span class=\"file\">unsaved</span></div>\n<div id=\"command-window\"><input id=\"command-prompt\" type=\"text\" disabled=\"disabled\"/></div>\n\n<div id=\"mode-menu-container\">\n	<ul id=\"mode-menu\">\n"
     + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.options : depth0),{"name":"each","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
-    + "	</ul>\n\n	<input id=\"menu-prompt\" type=\"text\" onfocus=\"this.value = this.value;\" disabled=\"disabled\"/>\n</div>\n";
+    + "	</ul>\n	<p id=\"menu-prompt-hint\"></p>\n	<input id=\"menu-prompt\" type=\"text\" onfocus=\"this.value = this.value;\" disabled=\"disabled\"/>\n</div>\n";
 },"useData":true});
 })();
