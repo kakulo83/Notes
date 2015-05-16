@@ -1,21 +1,7 @@
-TODO:
+																						TODO:
 
-
-ADD ABILITY TO MOVE ORPHANED OBJECTS ONTO TREE
-
-		- replace this.orphans array, instead use the already existing key in
-			this.chart.nodes().orphans
-
-		- hide orphaned pane if there are no more orphans
-
-		- reattach orphans onto the tree using quicklink mechanism (after 'm' is pressed, 
-			display all quicklink hints.  Keying in the hint moves the orphan to that node as a child)
 
 ADD ABILITY TO CREATE WIKI-LINKS
-
-		- add hot-keys to quickly create a link to another Object-page (Ctrl-l perhaps)
-
-		- add hot-keys to quickly create a linkable in-page anchor (Ctrl-a perhaps)
 
 		- Add vimium like mechanism for navigating to links using "f" key to show yellow
 			quicklink letters
@@ -26,8 +12,6 @@ ADD ABILITY TO CREATE WIKI-LINKS
 						- pressing lowercase "f" and navigating to the link will open 
 							the content in the same Window
 
-		- Add code mechanism in ObjectController to navigate to new linked Object
-		
 		- Add a stack structure to store history of Objects viewed so quick navigation
 			backwards can be made using <Ctrl-o> for backwards
 
@@ -41,16 +25,9 @@ SYNCRHONIZE TREE MODE NODES WITH OBJECT FILES
 
 		- Add prompt when I try to delete a tree node, the implication being that the corresponding
 			node.object file will be deleted	
-		
 
 
-
-PROMPT IF FILE NEEDS SAVING
-		- if content is shifted, added, deleted, or new links embedded on the page, in short if
-			the file is modified, exiting or changing mode's should result in a prompt to save the file
-
-
-ADD ADDITIONAL QUICK-KEY NAVIGATION
+ADD ADDITIONAL HOT-KEY NAVIGATION
 		- Shift+H, Shift+M, Shift_L should move the current content to HIGH/MIDDLE/LOW positions
 
 		- gg should set the first content as the current content, and shift the page accordingly

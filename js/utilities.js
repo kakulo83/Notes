@@ -54,6 +54,27 @@ JSON.circularStringify = function(object) {
 	});
 }
 
+exports.flattenTree = function (node) {
+	var flatArray = [];
+	var stack = [];
+	stack.push(node);
+
+	// simple breadth first traversal
+	while (stack.length > 0) {	
+		var currentNode = stack.pop();			
+		if (currentNode.children) {
+			for(var i=0; i<currentNode.children.length; i++) {
+				stack.push(currentNode.children[i]);			
+			}	
+		}
+		var orphan = { };
+		orphan.name = currentNode.name;
+		orphan.parent = null;
+		flatArray.push(orphan);
+	}
+	return flatArray;
+}
+
 exports.stringNumberToHintString = function(number, numHintDigits) {
 	var characterSet = ["s", "a", "d", "f", "j", "k", "l", "e", "w", "c", "m", "p", "g", "h" ];
 	var base, hintString, hintStringLength, i, remainder, _i, _ref;

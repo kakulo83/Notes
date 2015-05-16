@@ -218,7 +218,10 @@ img {
   position: absolute;
   height: 200px;
 }
-
+a.object-link {
+  color: #4886b9;
+  text-decoration: none;
+}
 
 /******************* D3 *******************/
 button {
@@ -482,10 +485,13 @@ a.quicklink {
 	padding-right: 5px;
 	border-radius: 2px;
 }
-
+a.quicklink.object {
+	position: absolute;
+}
 a.quicklink.hide {
 	display: none;
 }
+
 
 
 

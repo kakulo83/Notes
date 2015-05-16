@@ -12,7 +12,9 @@ var State = {
 	WORD_SELECT: 6,
 	LOCAL_MENU: 7,
 	FOLDING_CONTENT: 8,
-	COMMANDPROMPT: 9
+	COMMANDPROMPT: 9,
+	QUICKLINK: 10,
+	POP_QUICKLINK: 11
 };
 
 var Menu = {
@@ -29,16 +31,20 @@ var ObjectController = function(app) {
 	_ = window._;
 	CodeMirror = window.CodeMirror;
 
-	this.state = State.NORMAL;
+	this.unsavedData = false;
 	this.contents = []; 
 	this.file = "";
 	this.currentContent = null;
+	this.linkableObjects = [];
+	this.keyStrokeStack = [];
 };
 
 ObjectController.prototype.makeActive = function(selection) {
 	// subject is the subject matter, object is the specific topic
+	this.state = State.NORMAL;
 	this.subject = selection.subject;
 	this.object = selection.object;
+	this.unsavedData = false;
 	this.getObjectData(selection);
 }
 
@@ -59,19 +65,6 @@ ObjectController.prototype.processData = function(error, object) {
 	}
 }
 
-ObjectController.prototype.updateData = function(mutationRecords) {
-	mutationRecords.forEach ( function (mutation) {
-		/*
-		if (typeof mutation.removedNodes == "object") {
-			var jq = $(mutation.removedNodes);
-			console.log (jq);
-			console.log (jq.is("span.myclass2"));
-			console.log (jq.find("span") );
-		}
-		*/
-	});
-}
-
 ObjectController.prototype.renderView = function(content) {
 	// Generate Mode Template
 	var modeTemplate = Handlebars.templates.object;
@@ -80,28 +73,25 @@ ObjectController.prototype.renderView = function(content) {
 	// render content
 	$("#mode-container").html(modeTemplate());
 	if (content) {
-		$("#mode-container").append(content);	
+		$("#object-container").append(content);
+		//$("#mode-container").append(content);	
 	}
 	// render empty content
 	else {
-		var new_title = window.document.createElement("DIV");		
-		new_title.class = "content";
 		var h3 = window.document.createElement("H3");
 		h3.id = "title";
 		h3.class = "editable";
 		h3.textContent = this.object;
-		new_title.appendChild(h3);	
+		$("#object-container").prepend(h3);
 
 		var new_text = window.document.createElement("DIV");
 		new_text.className = "text_content content active"	
 		$(new_text).append("<p class='editable'>Add text</p>");
-		$("#mode-container").append(new_title);
-		$("#mode-container").append(new_text);			
+		$("#object-container").append(new_text);			
 
 		this.contents.push(new_text);
 		this.setCurrentContent(new_text);
 	}
-	
 	// render math	
 	renderMath();
 
@@ -112,16 +102,28 @@ ObjectController.prototype.renderView = function(content) {
 	};
 	$("footer").html(footerTemplate(footerData));
 
-	//init MutationObserver
-	var targetNodes         = $(".content");
+	// init mutation observer that will watch for content changes
+	var targetNodes         = $("#object-container, .text_content, .image_content");
 	var MutationObserver    = window.MutationObserver || window.WebKitMutationObserver;
 	var myObserver          = new MutationObserver (this.updateData.bind(this));
-	var obsConfig           = { childList: true, characterData: true, attributes: true, subtree: true };
+	var obsConfig           = { 
+															childList: true,
+															characterData: true, 
+															attributes: false, 
+															subtree: false 
+														};
 
-	//--- Add a target node to the observer. Can only add one node at a time.
-	targetNodes.each ( function () {
+	targetNodes.each(function () {
 			myObserver.observe (this, obsConfig);
-	} );
+	});
+}
+
+ObjectController.prototype.updateData = function(mutationRecords) {
+	mutationRecords.forEach ( function (mutation) {
+		if (mutation.type == "childList") {
+			this.unsavedData = true;
+		}
+	}.bind(this));
 }
 
 ObjectController.prototype.setCurrentContent = function(content) {
@@ -136,6 +138,11 @@ ObjectController.prototype.handleKeyPress = function(e) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_F:
 				// show links on page
+				showYellowSelector();
+				if (e.shiftKey)
+					this.state = State.POP_QUICKLINK;
+				else
+					this.state = State.QUICKLINK;
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
 				// Insert object 
@@ -175,7 +182,18 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				// Unfold one level
 				break;
 			case Constants.KeyEvent.DOM_VK_T:
-				this.app.changeMode(Constants.Mode.TREE);	
+				if (this.unsavedData) {
+					var confirm = window.prompt("To save unsaved content type 'yes'", "");
+					if (confirm !== null && confirm.toLowerCase() === "yes") {
+						this.save();
+						this.app.changeMode(Constants.Mode.TREE);
+					} 
+					else {
+						this.app.changeMode(Constants.Mode.TREE);	
+					}
+				} else {
+					this.app.changeMode(Constants.Mode.TREE);	
+				}
 				break;
 			case Constants.KeyEvent.DOM_VK_V:
 				if (! e.shiftKey)	{ return; }
@@ -188,6 +206,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 					var newCurrentWord = $(".currentWord").prev();
 					$(".currentWord").removeClass("currentWord");
 					$(newCurrentWord).addClass("currentWord");
+					this.state = State.WORD_SELECT;
 				}
 				break;	
 			case Constants.KeyEvent.DOM_VK_E:	
@@ -199,6 +218,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 					var newCurrentWord = $(".currentWord").next();
 					$(".currentWord").removeClass("currentWord");
 					$(newCurrentWord).addClass("currentWord");
+					this.state = State.WORD_SELECT;
 				} 
 				else {	
 					$(".active .editable span:first-child").addClass("currentWord");	
@@ -337,6 +357,16 @@ ObjectController.prototype.handleKeyPress = function(e) {
 	}
 	else if (this.state === State.WORD_SELECT) {
 		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_A:
+				// create an in-page linkable anchor
+				if (e.shiftKey)
+					this.makeAnchor();
+				break;
+			case Constants.KeyEvent.DOM_VK_L:
+				// create a link to another linkable anchor
+				if (e.shiftKey)
+					this.showLinkOptions();
+				break;
 			case Constants.KeyEvent.DOM_VK_N:
 				nextMenuItem();
 				break;
@@ -382,6 +412,12 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// handle selected item
+				var selectedOption = $(".local-menu-item.active");
+				if ( (/link-option/).test(selectedOption[0].className) ) {
+					hideLocalMenu(this.currentContent);
+					this.createLink(selectedOption);
+					this.state = State.NORMAL;
+				}
 				break;
 		}
 	}
@@ -430,6 +466,74 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 		}
 	}
+	else if (this.state === State.QUICKLINK) {
+		if (charCode === Constants.KeyEvent.DOM_VK_ESCAPE) {
+			this.state = State.NORMAL;
+			this.keyStrokeStack = [];
+			removeYellowSelector();
+		}
+		else if (_.contains([ Constants.KeyEvent.DOM_VK_A, Constants.KeyEvent.DOM_VK_C, Constants.KeyEvent.DOM_VK_D, Constants.KeyEvent.DOM_VK_E, Constants.KeyEvent.DOM_VK_F, Constants.KeyEvent.DOM_VK_G, Constants.KeyEvent.DOM_VK_H, Constants.KeyEvent.DOM_VK_J, Constants.KeyEvent.DOM_VK_K, Constants.KeyEvent.DOM_VK_L, Constants.KeyEvent.DOM_VK_M, Constants.KeyEvent.DOM_VK_P, Constants.KeyEvent.DOM_VK_S, Constants.KeyEvent.DOM_VK_W ], charCode)) {
+			var newChar = String.fromCharCode(charCode);
+			this.keyStrokeStack.push(newChar);
+			// Attempt to select node	
+			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
+			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var quicklink = $(query);
+			if ($(quicklink).length) {
+				var objectName = $(quicklink).siblings(".object-link").attr("href")	;
+				this.openLink(objectName);				
+			}
+		}
+	}
+	else if (this.state === State.POP_QUICKLINK) {
+		if (charCode === Constants.KeyEvent.DOM_VK_ESCAPE) {
+			this.state = State.NORMAL;
+			this.keyStrokeStack = [];
+			removeYellowSelector();
+		}
+		else if (_.contains([ Constants.KeyEvent.DOM_VK_A, Constants.KeyEvent.DOM_VK_C, Constants.KeyEvent.DOM_VK_D, Constants.KeyEvent.DOM_VK_E, Constants.KeyEvent.DOM_VK_F, Constants.KeyEvent.DOM_VK_G, Constants.KeyEvent.DOM_VK_H, Constants.KeyEvent.DOM_VK_J, Constants.KeyEvent.DOM_VK_K, Constants.KeyEvent.DOM_VK_L, Constants.KeyEvent.DOM_VK_M, Constants.KeyEvent.DOM_VK_P, Constants.KeyEvent.DOM_VK_S, Constants.KeyEvent.DOM_VK_W ], charCode)) {
+			var newChar = String.fromCharCode(charCode);
+			this.keyStrokeStack.push(newChar);
+			// Attempt to select node	
+			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
+			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var quicklink = $(query);
+			if ($(quicklink).length) {
+				var objectName = $(quicklink).siblings(".object-link").attr("href");
+				var new_win = window.gui.Window.open("file:///Users/robertcarter/Downloads/dogsVscats.jpg?object=derp");
+
+				/*
+				function getParameterByName(name) {
+					name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+					var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+							results = regex.exec(location.search);
+					return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+				}
+				
+				function getParameter(theParameter) { 
+					var params = window.location.search.substr(1).split('&');
+				 
+					for (var i = 0; i < params.length; i++) {
+						var p=params[i].split('=');
+					if (p[0] == theParameter) {
+						return decodeURIComponent(p[1]);
+					}
+					}
+					return false;
+				}	
+
+				example:
+					http://technicaloverload.com?test1=yes&test2=no&test3=http%3A%2F%2Ftechnicaloverload.com%2F					
+
+					getParameter('test1') --> yes
+					getParameter('test2') --> no
+					getParameter('test3') --> http://technicaloverload.com/
+					getParameter('test4') --> false	
+				*/
+
+			}
+		}
+	}
 }
 
 ObjectController.prototype.processCommandPrompt = function() {
@@ -449,7 +553,7 @@ ObjectController.prototype.processCommandPrompt = function() {
 ObjectController.prototype.showVisualSelectMenu = function() {
 	var localMenuDiv = window.document.createElement("DIV");
 	localMenuDiv.className = "local-menu-container";
-	var localMenu = window.Handlebars.helpers.localMenu(["visual menu item1", "change me in line 732"]);
+	var localMenu = window.Handlebars.helpers.localMenu(["visual menu item1", "change me in showVisualSelectionMenu function"], "");
 	$(localMenuDiv).append(localMenu);
 	$(this.currentContent).prepend(localMenuDiv);
 }
@@ -458,7 +562,7 @@ ObjectController.prototype.showCurrentWordMenu = function() {
 	var currentWord = $(".currentWord")[0];
 	var localMenuDiv = window.document.createElement("DIV");
 	localMenuDiv.className = "local-menu-container link-targets";
-	var localMenu = window.Handlebars.helpers.localMenu(["create in-page anchor", "create link"]);
+	var localMenu = window.Handlebars.helpers.localMenu(["Modify me in showCurrentWordMenu function"], "");
 	$(localMenuDiv).append(localMenu);
 	$(currentWord).append(localMenuDiv);
 }
@@ -559,6 +663,7 @@ ObjectController.prototype.closeVI = function(e) {
 }
 
 ObjectController.prototype.editTextContent = function() {
+	// using codemirror
 	this.openVI();
 }
 
@@ -676,7 +781,7 @@ ObjectController.prototype.save = function() {
 			var editable = $(content).find(".editable").clone();
 			$(editable).html(TeX);
 
-			var preRenderedContent = $(content).clone();
+		var preRenderedContent = $(content).clone();
 			$(preRenderedContent).find(".editable").replaceWith(editable);
 			data = data + preRenderedContent[0].outerHTML + "\n";	
 		} else
@@ -684,10 +789,66 @@ ObjectController.prototype.save = function() {
 	},this);
 
 	data = data.replace(/active/, "");
+
 	fs.writeFile(this.file, data, function(err) {
 		if (err) throw err;
 		console.log('It\'s saved!');
 	});
+	this.unsavedData = false;
+}
+
+ObjectController.prototype.makeAnchor = function() {
+
+}
+
+ObjectController.prototype.showLinkOptions = function() {
+	if (this.linkableObjects.length == 0)	{
+		var getLinkableObjectPromise = this.getLinkableObjects();	
+		getLinkableObjectPromise.done(function(result) {
+			this.linkableObjects = result;
+			var currentWord = $(".currentWord")[0];
+			var localMenuDiv = window.document.createElement("DIV");
+			localMenuDiv.className = "local-menu-container link-targets";
+			var localMenu = window.Handlebars.helpers.localMenu(this.linkableObjects, "link-option");
+			$(localMenuDiv).append(localMenu);
+			$(currentWord).append(localMenuDiv);
+		}.bind(this));	
+	} 
+	else {	
+		var currentWord = $(".currentWord")[0];
+		var localMenuDiv = window.document.createElement("DIV");
+		localMenuDiv.className = "local-menu-container link-targets";
+		var localMenu = window.Handlebars.helpers.localMenu(this.linkableObjects, "link-option");
+		$(localMenuDiv).append(localMenu);
+		$(currentWord).append(localMenuDiv);
+	}
+}
+
+ObjectController.prototype.createLink = function(selectedOption) {
+	var target = $(selectedOption).text();
+	var targetText = $("span.currentWord").html();
+	var link   = String.interpolate("<a href='%@' class='object-link'>%@</a>", target, targetText);
+	$("span.currentWord").html(link);
+}
+
+ObjectController.prototype.getLinkableObjects = function() {
+	var deferred = new $.Deferred();
+	var objectTreePath = String.interpolate("%@%@.notes/%@.tree", Constants.PATH, this.app.subject, this.app.subject);
+	d3.json(objectTreePath, function(error, nodes) {
+		var linkableObjects = _.map(Utilities.flattenTree(nodes), function(object) {
+														return object.name;	
+													});
+		deferred.resolve(linkableObjects);
+	}.bind(this));
+	return deferred.promise();
+}
+
+ObjectController.prototype.openLink = function(objectName) {
+	this.makeActive({ subject: this.subject, object: objectName });
+}
+
+ObjectController.prototype.popLink = function() {
+
 }
 
 function nextMenuItem() {
@@ -836,13 +997,29 @@ function hideMenu() {
 	$("#mode-menu-container").hide();
 }
 
-window.Handlebars.registerHelper("localMenu", function(items) {
+function showYellowSelector() {
+	var allLinks = $(".object-link").toArray();
+
+	for (var i = 0; i < allLinks.length; i++) {
+		var quicklink = window.document.createElement("A");
+		var hint = Utilities.stringNumberToHintString(i);
+		quicklink.innerHTML = hint;
+		quicklink.className = "quicklink object " + hint;
+		$(allLinks[i]).before(quicklink);	
+	}
+}
+
+function removeYellowSelector() {
+	$("a.quicklink").remove();
+}
+
+window.Handlebars.registerHelper("localMenu", function(items, className) {
 	var menu = "<ul class='local-menu'>";
 	for (var i=0; i<items.length; i++) {
 		if (i === 0)
-			menu = menu + "<li class='local-menu-item active'>" + items[i] + "</li>";
+			menu = menu + String.interpolate("<li class='local-menu-item %@ active'>", className) + items[i] + "</li>";
 		else 
-			menu = menu + "<li class='local-menu-item'>" + items[i] + "</li>";
+			menu = menu + String.interpolate("<li class='local-menu-item %@'>", className) + items[i] + "</li>";
 	}
 	return menu = menu + "</ul>";
 });

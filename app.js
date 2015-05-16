@@ -33,6 +33,7 @@ $(document).ready(function() {
 
 App = function() { };
 App.prototype.init = function(subject) {
+	this.subject = subject;
 
 	this.getMode = function() { return this.mode; };
 	this.setMode = function(newMode) { this.mode = newMode; };
@@ -75,13 +76,6 @@ App.prototype.handleKeyPress = function(e) {
   var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
 	//console.log("Character typed: " + String.fromCharCode(charCode));
 	//console.log("Character code: " + charCode);
-
-	/* TESTING
-	if (charCode === Constants.KeyEvent.DOM_VK_T) {
-		this.changeMode(Constants.Mode.TREE);
-		this.tree_controller.makeActive();
-	}
-	*/
 
 	switch(this.getMode()) {
 		case Constants.Mode.TREE:

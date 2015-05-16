@@ -38,7 +38,7 @@ var TreeController = function(app, subject, window) {
 	this.subject = subject || null; 
 	this.keyStrokeStack = [];
 	this.currentNode = null;
-};
+}
 
 TreeController.prototype.makeActive = function() {
 	if (this.chart.nodes()) //if (this.chart) 
@@ -89,8 +89,7 @@ TreeController.prototype.renderView = function() {
 	$("#mode-container").html(modeTemplate(mainData));
 	$("#mode-container").prepend("<div id='orphans-container'><h3>Orphaned Objects</h3><ul id='orphans'></ul></div>");	
 
-	if (this.orphans.length > 0) 
-		this.renderOrphans();	
+	this.renderOrphans();	
 
 	if (this.chart.nodes()) {
 		this.chart.render();
@@ -410,7 +409,7 @@ TreeController.prototype.addNewNode = function(name) {
 TreeController.prototype.deleteNode = function() {
 	// remove all children from tree and make orphans
 	if (this.currentNode.children || this.currentNode._children) {
-		var new_orphans = flattenTree(this.currentNode);
+		var new_orphans = Utilities.flattenTree(this.currentNode);
 		// the currentNode is being deleted so shift the array by 1
 		new_orphans.shift();
 		this.chart.nodes().orphans = this.chart.nodes().orphans.concat(new_orphans);
@@ -435,7 +434,7 @@ TreeController.prototype.deleteNode = function() {
 TreeController.prototype.detachNode = function() {
 	// move children of deleted node to orphan array
 	if (this.currentNode.children || this.currentNode._children) {
-		var new_orphans = flattenTree(this.currentNode);
+		var new_orphans = Utilities.flattenTree(this.currentNode);
 		this.chart.nodes().orphans = this.chart.nodes().orphans.concat(new_orphans);
 	}
 	else {
@@ -475,15 +474,18 @@ TreeController.prototype.moveOrphan = function(parentNode) {
 	$(".orphan.current").remove();
 
 	// remove orphan from this.chart().nodes().orphans
-	var orphanIndex = 0;		
+	var orphanIndex = 0;
 	for (var i=0; i<this.chart.nodes().orphans.length; i++) {
 		if (this.chart.nodes().orphans[i].name == name) {
 			orphanIndex = i;
 			break;	
-		}	
+		}
 	}
-
 	this.chart.nodes().orphans.splice(orphanIndex, 1);
+
+	// hide orphans container when no orphans 
+	if (this.chart.nodes().orphans.length == 0)
+		$("#orphans-container").hide();	
 
 	this.ignoreKeyboardInput = false;	
 	this.keyStrokeStack = [];
@@ -492,6 +494,11 @@ TreeController.prototype.moveOrphan = function(parentNode) {
 }
 
 TreeController.prototype.renderOrphans = function() {
+	if (this.chart.nodes().orphans.length > 0)
+		$("#orphans-container").show();
+	else 
+		$("#orphans-container").hide();
+
 	$("#orphans").html("");
 
 	_.each(this.chart.nodes().orphans, function(orphan) {		
@@ -631,27 +638,6 @@ TreeController.prototype.processCommandPrompt = function() {
 			}
 			break;
 	}
-}
-
-function flattenTree(node) {
-	var flatArray = [];
-	var stack = [];
-	stack.push(node);
-
-	// simple breadth first traversal
-	while (stack.length > 0) {	
-		var currentNode = stack.pop();			
-		if (currentNode.children) {
-			for(var i=0; i<currentNode.children.length; i++) {
-				stack.push(currentNode.children[i]);			
-			}	
-		}
-		var orphan = { };
-		orphan.name = currentNode.name;
-		orphan.parent = null;
-		flatArray.push(orphan);
-	}
-	return flatArray;
 }
 
 function writeToFile(file, object) {
