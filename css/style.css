@@ -216,7 +216,6 @@ img {
 .link-targets {
   display: inline-block;
   position: absolute;
-  height: 200px;
 }
 a.object-link {
   color: #4886b9;

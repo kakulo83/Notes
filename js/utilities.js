@@ -45,7 +45,7 @@ JSON.circularStringify = function(object) {
 	});
 	*/
 	return JSON.stringify(object, function(key, value) {
-		if (key == 'parent' || key == 'x0' || key == 'y0' || key == 'depth' || key == 'x' || key == 'y' || key == 'id' || key == 'size') {
+		if (key == 'parent' || key == 'x0' || key == 'y0' || key == 'depth' || key == 'x' || key == 'y' || key == 'id' || key == 'size' || key == '_children') {
 			 return;
 		}
 		else {

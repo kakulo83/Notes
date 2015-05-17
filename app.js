@@ -8,7 +8,7 @@ var util = require("util");
 var Constants = require("./js/constants.js");
 var TreeController = require("./js/tree_controller.js");
 var ObjectController = require("./js/object_controller.js");
-//var ProcessController = require("./js/process_controller.js");
+var ProcessController = require("./js/process_controller.js");
 
 // check operating system for the menu
 if (process.platform === "darwin") {
@@ -49,7 +49,7 @@ App.prototype.init = function(subject) {
 
 	this.tree_controller    = new TreeController(this, subject, window);
 	this.object_controller  = new ObjectController(this, window);
-	//this.process_controller = new ProcessController(this, window);
+	this.process_controller = new ProcessController(this, window);
 
 	document.addEventListener("keydown", this.handleKeyPress.bind(this), false);
 	this.changeMode(Constants.Mode.TREE);

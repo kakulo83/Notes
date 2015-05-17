@@ -481,7 +481,8 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			var quicklink = $(query);
 			if ($(quicklink).length) {
 				var objectName = $(quicklink).siblings(".object-link").attr("href")	;
-				this.openLink(objectName);				
+				this.openLink(objectName);
+				this.state = State.NORMAL;
 			}
 		}
 	}
@@ -844,6 +845,7 @@ ObjectController.prototype.getLinkableObjects = function() {
 }
 
 ObjectController.prototype.openLink = function(objectName) {
+	this.keyStrokeStack = [];	
 	this.makeActive({ subject: this.subject, object: objectName });
 }
 

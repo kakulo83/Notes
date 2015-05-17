@@ -2,9 +2,21 @@ var fs = require("fs");
 var Constants = require("./constants.js");
 var Utilities = require("./utilities.js");
 
-var ProcessController = function(app) {
+var State = {
+	NORMAL: 0,
+	MAIN_MENU: 1
+};
+
+var ProcessController = function(app, window) {
 	this.app = app;
 };
+
+ProcessController.prototype.makeActive = function(selection) {
+	this.state = State.NORMAL;
+
+	this.renderView();
+}
+
 
 ProcessController.prototype.renderView = function() {
 	// Generate Mode Template
@@ -17,7 +29,7 @@ ProcessController.prototype.renderView = function() {
 	// Generate Footer Template
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
-		mode: Mode.PROCESS.toString(),
+		mode: Constants.Mode.PROCESS.toString(),
 		options: ["(a)dd process", "(m)ove process", "(d)elete process", "(c)opy process"]
 	};
 	$("footer").html(footerTemplate(footerData));
@@ -27,49 +39,49 @@ ProcessController.prototype.handleKeyPress = function(e) {
 	var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
 
 	switch(charCode) {
-		case KeyEvent.DOM_VK_A:
+		case Constants.KeyEvent.DOM_VK_A:
 			// Add new process 
 			break;
-		case KeyEvent.DOM_VK_C:
+		case Constants.KeyEvent.DOM_VK_C:
 			// Copy process 
 			break;
-		case KeyEvent.DOM_VK_D:
+		case Constants.KeyEvent.DOM_VK_D:
 			// Delete process 
 			break;
-		case KeyEvent.DOM_VK_I:
+		case Constants.KeyEvent.DOM_VK_I:
 			// Insert process 
 			break;
-		case KeyEvent.DOM_VK_J:
+		case Constants.KeyEvent.DOM_VK_J:
 			// Move down process
 			break;
-		case KeyEvent.DOM_VK_K:
+		case Constants.KeyEvent.DOM_VK_K:
 			// Move up process 
 			break;
-		case KeyEvent.DOM_VK_M:
+		case Constants.KeyEvent.DOM_VK_M:
 			// Open mode specific menu	
 
 			// (Secondary) fold one level 
 			break;	
-		case KeyEvent.DOM_VK_O:
-			this.app.changeMode(Mode.OBJECT);
+		case Constants.KeyEvent.DOM_VK_O:
+			this.app.changeMode(Constants.Mode.OBJECT);
 			break;
-		case KeyEvent.DOM_VK_R:
+		case Constants.KeyEvent.DOM_VK_R:
 			// Unfold one level
 			break;
-		case KeyEvent.DOM_VK_T:
-			this.app.changeMode(Mode.TREE);	
+		case Constants.KeyEvent.DOM_VK_T:
+			this.app.changeMode(Constants.Mode.TREE);	
 			break;
-		case KeyEvent.DOM_VK_Z:
+		case Constants.KeyEvent.DOM_VK_Z:
 			// Folding Initiation key
 			break;
-		case KeyEvent.DOM_VK_ADD:
+		case Constants.KeyEvent.DOM_VK_ADD:
 			// Zoom in?
 			break;
-		case KeyEvent.DOM_VK_SUBTRACT:
+		case Constants.KeyEvent.DOM_VK_SUBTRACT:
 			// Zoom out?
 			break;
 		default:
-			this.baseController.handleKeyPress(e);
+			
 	}
 }
 

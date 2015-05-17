@@ -89,7 +89,8 @@ TreeController.prototype.renderView = function() {
 	$("#mode-container").html(modeTemplate(mainData));
 	$("#mode-container").prepend("<div id='orphans-container'><h3>Orphaned Objects</h3><ul id='orphans'></ul></div>");	
 
-	this.renderOrphans();	
+	if (this.chart.nodes().orphans)
+		this.renderOrphans();	
 
 	if (this.chart.nodes()) {
 		this.chart.render();
@@ -248,7 +249,8 @@ TreeController.prototype.handleKeyPress = function(e) {
 				this.app.changeMode(Constants.Mode.OBJECT, selection);
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
-				//this.app.changeMode(Constants.Mode.PROCESS);
+				var selection = { "subject": this.subject, "object": this.currentNode.name };
+				this.app.changeMode(Constants.Mode.PROCESS, selection);
 				break;
 			case Constants.KeyEvent.DOM_VK_R:
 				// Unfold one level
@@ -595,14 +597,6 @@ TreeController.prototype.processCommandPrompt = function() {
 	var commandArray = $("#command-prompt").val().split(" ");
 	var option = commandArray[0].toLowerCase();
 	var subjectFromCommandPrompt = commandArray[1] || null;
-
-	// desired behavior.  Regardless of whether this.subject is defined, IF a command line supplied subject
-	// is given, the subject.tree file shall be written
-
-				// case 1   No command line subject given.  Check if this.subject is was given.  If it was, write to that
-
-				// case 2   this.subject is defined, BUT a command line subject was given.  If the directory doesn't exist
-				// 					create it and the subject.tree file 
 
 	switch(option) {
 		case "w":
