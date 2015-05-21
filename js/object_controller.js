@@ -450,8 +450,22 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				}
 				this.state = State.NORMAL;
 			case Constants.KeyEvent.DOM_VK_M:
+				if (e.shiftKey) {
+					this.foldAllContent();
+				}
+				else {
+
+				}
+				this.state = State.NORMAL;
 				break;			
 			case Constants.KeyEvent.DOM_VK_R:
+				if (e.shiftKey) {
+					this.unfoldAllContent();
+				}
+				else {
+
+				}
+				this.state = State.NORMAL;
 				break;
 		}
 	}
@@ -837,12 +851,6 @@ ObjectController.prototype.showLinkOptions = function() {
 			var currentWord = $(".currentWord")[0];
 			var localMenuDiv = window.document.createElement("DIV");
 			localMenuDiv.className = "local-menu-container link-targets";
-
-
-			// TODO  Patch this, Handlebars helper is SCREWED UP!!!!!!!!!!!!!!!!!!
-			//  I'm passing in an array of objects instead of an array of primitives 
-
-	
 			var localMenu = window.Handlebars.helpers.linkOptions(this.linkableObjects, "link-option");
 			$(localMenuDiv).append(localMenu);
 			$(currentWord).append(localMenuDiv);
@@ -886,6 +894,43 @@ ObjectController.prototype.popLink = function() {
 
 }
 
+ObjectController.prototype.foldAllContent = function() {
+	var depth1Content = $(".content[data-depth=1]").toArray();
+	_.each(depth1Content, function(content) {
+		var currentDepth = 1;
+		$(content).children().hide();
+		$(content).prepend("<div class='folded-content'>+</div>");	
+
+		// Fold all content from curentContnet, any deeper, any the same level, up until
+		// content at a lower depth number is encountered
+		var start = $.inArray(content, this.contents) + 1;
+		for (var i = start; i < this.contents.length; i++) {
+			var nextContent = this.contents[i];
+			var nextDepth = Number.parseInt(nextContent.dataset.depth);
+			if (nextDepth < currentDepth)
+				break;	
+			$(nextContent).hide();
+		}
+	},this);
+}
+
+ObjectController.prototype.unfoldAllContent = function() {
+	var depth1Content = $(".content[data-depth=1]").toArray();
+	_.each(depth1Content, function(content) {
+		$(content).find(".folded-content").remove();
+		$(content).children().show();
+
+		var next = $.inArray(content, this.contents) + 1;
+		var currentDepth = 1;
+		for (var i = next; i < this.contents.length; i++) {
+			if ( Number.parseInt(this.contents[i].dataset.depth) >= currentDepth )
+				$(this.contents[i]).show();
+			else
+				break;
+		}
+	},this);
+}
+
 function nextMenuItem() {
 	var activeMenuItem = $(".local-menu-item.active");
 	var allLocalMenuItems = $(".local-menu-item").toArray();
@@ -926,26 +971,6 @@ function decreaseFoldDepth(currentContent) {
 			depth = depth - 1;
 		currentContent.setAttribute("data-depth", depth);		
 	}
-}
-
-function foldAllContent() {
-	
-}
-
-function foldAllContentToDepth(curentContent) {
-
-}
-
-function unfoldAllContentToDepth(depth) {
-
-}
-
-function foldContentToDepth(currentContent, depth) {
-
-}
-
-function unfoldContentToDepth(currentContent, depth) {
-
 }
 
 function scrollDown(nextContent) {
