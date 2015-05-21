@@ -1,11 +1,15 @@
-																						TODO:
+TODO:
+
+ADD INDEX VIEW
+		
+		- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
+			like content in an object view 
 
 START APPLICATION FROM CMD-LINE WITH/WITHOUT SUBJECT
 
 START APPLICATION FROM EXECUTABLE ICON (NO SUBJECT)
 
 ADD KEY 'FILE' TO DATA MODEL
-
 
 
 ADD ABILITY TO CREATE WIKI-LINKS
@@ -16,16 +20,13 @@ ADD ABILITY TO CREATE WIKI-LINKS
 						- pressing uppercase "F" and navigating to the link will Pop 
 							open a new Window with the content
 
-						- pressing lowercase "f" and navigating to the link will open 
-							the content in the same Window
-
 		- Add a stack structure to store history of Objects viewed so quick navigation
 			backwards can be made using <Ctrl-o> for backwards
 
+ADD ABILITY TO OPEN OTHER NOTES
 
-PRESERVER TEXT CONTENT FORMAT
 
-		- Use <pre> tag instead of the <p> tag
+FAIL KATEX GRACEFULLY
 
 
 SYNCRHONIZE TREE MODE NODES WITH OBJECT FILES

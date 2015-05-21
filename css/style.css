@@ -156,6 +156,10 @@ ul#orphans li.orphan .circle.current {
 	padding-left: 80px;
 	padding-right: 80px;
 }
+.title {
+  font-size: 20px;
+  font-weight: bold;
+}
 
 div[data-depth="1"] { padding-left: 160px; }
 div[data-depth="2"] { padding-left: 240px; }
@@ -188,6 +192,9 @@ textarea.editable {
 }
 .text_content.active, .image_content.active {
 	border-left: solid red;
+}
+.image_content img {
+	background-color: white;
 }
 .highlighted {
 	color: black !important;
@@ -456,13 +463,16 @@ button {
 
 .node text {
 	font-size: 11px;
-	stroke: rgb(140, 53, 140);
+	/*stroke: rgb(140, 53, 140);*/
+	stroke: rgb(27, 175, 223);
+	/*stroke: lightblue;*/
 }
 
 path.link {
 	fill: none;
 	/* stroke: #ccc; */
-	stroke: darkblue;
+	/*stroke: darkblue;*/
+	stroke: lightblue;
 	stroke-width: 1.5px;
 }
 circle.current {

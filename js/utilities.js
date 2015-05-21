@@ -45,7 +45,7 @@ JSON.circularStringify = function(object) {
 	});
 	*/
 	return JSON.stringify(object, function(key, value) {
-		if (key == 'parent' || key == 'x0' || key == 'y0' || key == 'depth' || key == 'x' || key == 'y' || key == 'id' || key == 'size' || key == '_children') {
+		if (key == 'parent' || key == 'x0' || key == 'y0' || key == 'depth' || key == 'x' || key == 'y' || key == 'id' || key == 'size' ) {
 			 return;
 		}
 		else {
@@ -69,6 +69,7 @@ exports.flattenTree = function (node) {
 		}
 		var orphan = { };
 		orphan.name = currentNode.name;
+		orphan.file = currentNode.file;
 		orphan.parent = null;
 		flatArray.push(orphan);
 	}

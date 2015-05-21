@@ -32,8 +32,7 @@ var TreeController = function(app, subject, window) {
 	this.chart = tree();
 	this.orphans = [];
 	this.state = State.NORMAL;
-	this.ignoreKeyboardInput = false;  // without this flag, the full range of keyboard letters wouldn't be available for setting new node names, or quicklink letters
-																		 // because letters like 'a', 'd', 'm' etc would be captured as they are also hotkeys themselves.
+	this.ignoreKeyboardInput = false;  // without this flag, the full range of keyboard letters wouldn't be available for setting new node names, or quicklink letters because letters like 'a', 'd', 'm' etc would be captured as they are also hotkeys themselves.
 	this.file = null;
 	this.subject = subject || null; 
 	this.keyStrokeStack = [];
@@ -48,6 +47,7 @@ TreeController.prototype.makeActive = function() {
 }
 
 TreeController.prototype.getTreeData = function(subject) {
+	console.log("Retrieving data for " + subject);
 	if (subject) {
 		this.subject = subject;
 		var file = String.interpolate("%@%@.notes/%@.tree", Constants.PATH, subject, subject); 
@@ -55,7 +55,8 @@ TreeController.prototype.getTreeData = function(subject) {
 	}
 	else {
 		// create the tree json in memory with New_Subject as the root node
-		var root = { "name": "New Subject", "children": [] };
+		var file = 	String.interpolate("%@%@.notes/%@.json", Constants.PATH, subject, subject); 
+		var root = { "name": "New Subject", "file": file, "children": [], "orphans": [] };
 		this.file = null;
 		this.chart.nodes(root);
 		this.renderView();
@@ -73,7 +74,8 @@ TreeController.prototype.processData = function(error, nodes) {
 	}
 	else {
 		// file/data not exist.  create the tree json in memory
-		var root = { "name": this.subject , "children": [] };
+		var file = 	String.interpolate("%@%@.notes/%@.tree", Constants.PATH, this.subject, this.subject); 
+		var root = { "name": this.subject , "file": file, "children": [], "orphans": [] };
 		this.file = null;
 		this.chart.nodes(root);
 		this.renderView();
@@ -107,7 +109,7 @@ TreeController.prototype.renderView = function() {
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
 		mode: Constants.Mode.TREE.toString(),
-		options: ["(a)dd node", "(m)ove and make child to", "(d)etach node",  "(D)elete node"]
+		options: ["(a)dd node", "(m)ove and make child to", "(r)ename", "(d)etach node",  "(D)elete node"]
 	};
 	$("footer").html(footerTemplate(footerData));
 }
@@ -168,13 +170,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_D:
 				var confirm = window.prompt("To delete this content, type 'yes'", "");
 				if (confirm.toLowerCase() === "yes") {
-					// delete node from this.chart.nodes().orphans	
-
-					this.currentNode = this.chart.nodes();
-					var query = String.interpolate(".node.%@", this.chart.nodes().id);
-					var rootNodeSVG = $(query);
-					d3.select(rootNodeSVG[0]).select("circle")
-						.attr("class", "current");
+					this.deleteOrphan();
 					this.state = State.NORMAL;
 				}
 				break;	
@@ -245,7 +241,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_O:
 				if (this.subject === "")
 					throw new Error("Subject not saved!");
-				var selection = { "subject": this.subject, "object": this.currentNode.name };
+				var selection = this.currentNode; 
 				this.app.changeMode(Constants.Mode.OBJECT, selection);
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
@@ -311,7 +307,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 				if (! this.ignoreKeyboardInput) {
 					this.ignoreKeyboardInput = true;
 					e.preventDefault();
-					showMenuPrompt("Enter node name");
+					showMenuPrompt("Enter node name", "add_node");
 				}
 				break;
 			case Constants.KeyEvent.DOM_VK_D:
@@ -321,15 +317,24 @@ TreeController.prototype.handleKeyPress = function(e) {
 					this.ignoreKeyboardInput = true;
 					if (e.shiftKey) {
 						var confirm = window.prompt("To delete this node, type 'yes'", "");
-						if (confirm.toLowerCase() !== "yes") 
+						if (confirm.toLowerCase() === "yes") 
 							this.deleteNode();
+							this.ignoreKeyboardInput = false;
 					}
 					else {
 						var confirm = window.prompt("To detach this node, type 'yes'", "");
 						if (confirm.toLowerCase() === "yes") 
 							this.detachNode();
+							this.ignoreKeyboardInput = false;
 					}
 					this.state = State.NORMAL;
+				}
+				break;
+			case Constants.KeyEvent.DOM_VK_R:
+				if (! this.ignoreKeyboardInput) {
+					this.ignoreKeyboardInput = true;
+					e.preventDefault();
+					showMenuPrompt("Enter new name", "rename_node");
 				}
 				break;
 			case Constants.KeyEvent.DOM_VK_ESCAPE:
@@ -339,9 +344,13 @@ TreeController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				var name = $("#menu-prompt").val();
-				this.addNewNode(name);
+				if ( $("#menu-prompt").hasClass("add_node") ) 
+					this.addNewNode(name);
+				else if ( $("#menu-prompt").hasClass("rename_node") )
+					this.renameNode(name);
 				this.ignoreKeyboardInput = false;
 				hideMenuPrompt();	
+				this.state = State.NORMAL;
 				break;
 			default:
 		}
@@ -399,20 +408,25 @@ TreeController.prototype.addNewNode = function(name) {
 	this.state = State.NORMAL;
 
 	var id = d3.selectAll(".node")[0].length + 1;
-	var newNode = { name: name, depth: this.currentNode.depth+1, parent: this.currentNode, children: [] };
+	var filePath = Constants.PATH + this.subject + ".notes/" + name + ".object";
+	var newNode = { name: name, file: filePath, depth: this.currentNode.depth+1, parent: this.currentNode, children: [] };
 	// If current node has no array for it's children, give it one
 	if (!this.currentNode.children)
 		this.currentNode.children = [];
 	this.currentNode.children.push(newNode);
 	this.chart.update(this.chart.nodes());
-	// TODO Create the .object file
+}
+
+TreeController.prototype.renameNode = function(name) {
+	this.currentNode.name = name;	
+	$("circle.current").siblings("text").text(name);
 }
 
 TreeController.prototype.deleteNode = function() {
 	// remove all children from tree and make orphans
 	if (this.currentNode.children || this.currentNode._children) {
 		var new_orphans = Utilities.flattenTree(this.currentNode);
-		// the currentNode is being deleted so shift the array by 1
+		// the currentNode is being deleted so shift the array by 1 to remove it
 		new_orphans.shift();
 		this.chart.nodes().orphans = this.chart.nodes().orphans.concat(new_orphans);
 		this.renderOrphans();
@@ -431,6 +445,16 @@ TreeController.prototype.deleteNode = function() {
 	this.setCurrentNodeFromDataStructureSelect(this.chart.nodes());
 
 	hideMenuPrompt();
+}
+
+TreeController.prototype.deleteOrphan = function() {
+	var name = $(".orphan.current").text();
+	$(".orphan.current").remove();
+	this.chart.nodes().orphans = _.reject(this.chart.nodes().orphans, function(orphan) {
+																	return orphan.name === name;		
+															},this);
+	if (this.chart.nodes().orphans.length == 0)
+		$("#orphans-container").hide();	
 }
 
 TreeController.prototype.detachNode = function() {
@@ -462,7 +486,8 @@ TreeController.prototype.detachNode = function() {
 TreeController.prototype.moveOrphan = function(parentNode) {
 	// create the new legitimate child
 	var name = $(".orphan.current .orphan-name").text();
-	var newChild = { "name": name, "parent": parentNode };
+	var file = Constants.PATH + this.subject + ".notes/" + name + ".object";
+	var newChild = { "name": name, "file": file, "parent": parentNode };
 
 	// add as new child to parent node
 	if (parentNode.children)
@@ -644,7 +669,7 @@ function showMenu() {
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
 		mode: Constants.Mode.TREE.toString(),
-		options: ["(a)dd node", "(m)ove and make child to", "(d)etach node",  "(D)elete node"]
+		options: ["(a)dd node", "(m)ove and make child to", "(r)ename", "(d)etach node",  "(D)elete node"]
 	};
 	$("footer").html(footerTemplate(footerData));
 	$("#mode-menu-container").show();
@@ -665,9 +690,10 @@ function hideCommandPrompt() {
 	$("#command-prompt").attr("disabled", true);
 }
 
-function showMenuPrompt(hint) {
+function showMenuPrompt(hint, operation) {
 	$("#menu-prompt-hint").text(hint);
 	$("#mode-menu").css("visibility", "hidden");
+	$("#menu-prompt").addClass(operation);
 	$("#menu-prompt").prop("disabled", false);
 	$("#menu-prompt").focus();
 	$("#menu-prompt").attr("value", "");

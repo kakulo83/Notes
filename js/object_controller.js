@@ -42,56 +42,45 @@ var ObjectController = function(app) {
 ObjectController.prototype.makeActive = function(selection) {
 	// subject is the subject matter, object is the specific topic
 	this.state = State.NORMAL;
-	this.subject = selection.subject;
-	this.object = selection.object;
+	this.object = selection;
 	this.unsavedData = false;
-	this.getObjectData(selection);
+	this.getObjectData();
 }
 
-ObjectController.prototype.getObjectData = function(selection) {
-	var objectPath = String.interpolate("%@%@.notes/%@.object", Constants.PATH, selection.subject, selection.object);
-	this.file = objectPath;	
-	d3.html(objectPath, this.processData.bind(this));
+ObjectController.prototype.getObjectData = function() {
+	this.contents = [];
+	d3.html(this.object.file, this.renderData.bind(this));
 }
 
-ObjectController.prototype.processData = function(error, object) {
+ObjectController.prototype.renderData = function(error, object) {
+	var modeTemplate = Handlebars.templates.object;
+	$("#mode-container").html(modeTemplate());
+
 	if (object) {
 		this.contents = $(object).children(".content");
 		this.setCurrentContent(this.contents[0]);
-		this.renderView(object);
+		$("#object-container").append(object);
 	}
 	else {
-		this.renderView();
-	}
-}
+		var pTitle = window.document.createElement("P");
+		pTitle.className = "editable title";
+		pTitle.textContent = this.object.name;
 
-ObjectController.prototype.renderView = function(content) {
-	// Generate Mode Template
-	var modeTemplate = Handlebars.templates.object;
-	var data = { content: content };
-
-	// render content
-	$("#mode-container").html(modeTemplate());
-	if (content) {
-		$("#object-container").append(content);
-		//$("#mode-container").append(content);	
-	}
-	// render empty content
-	else {
-		var h3 = window.document.createElement("H3");
-		h3.id = "title";
-		h3.class = "editable";
-		h3.textContent = this.object;
-		$("#object-container").prepend(h3);
+		var titleDiv = window.document.createElement("DIV");
+		titleDiv.className = "text_content content";
+		$(titleDiv).append(pTitle);
+		$("#object-container").prepend(titleDiv);
 
 		var new_text = window.document.createElement("DIV");
-		new_text.className = "text_content content active"	
+		new_text.className = "text_content content active";
 		$(new_text).append("<p class='editable'>Add text</p>");
 		$("#object-container").append(new_text);			
 
+		this.contents.push(titleDiv);
 		this.contents.push(new_text);
 		this.setCurrentContent(new_text);
 	}
+
 	// render math	
 	renderMath();
 
@@ -219,9 +208,9 @@ ObjectController.prototype.handleKeyPress = function(e) {
 					$(".currentWord").removeClass("currentWord");
 					$(newCurrentWord).addClass("currentWord");
 					this.state = State.WORD_SELECT;
-				} 
-				else {	
-					$(".active .editable span:first-child").addClass("currentWord");	
+				}
+				else {
+					$(this.currentContent).find(".editable span:first-child").addClass("currentWord");
 					this.state = State.WORD_SELECT;
 				}
 				break;
@@ -301,8 +290,8 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				hideMenu();									
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
-				this.appendMathContent();
 				hideMenu();
+				this.appendMathContent();
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// process input from command prompt
@@ -480,8 +469,9 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			var query = String.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 			if ($(quicklink).length) {
-				var objectName = $(quicklink).siblings(".object-link").attr("href")	;
-				this.openLink(objectName);
+				var objectName = $(quicklink).siblings(".object-link").text();
+				var objectFile = $(quicklink).siblings(".object-link").attr("href");
+				this.openLink({"name": objectName, "file": objectFile });
 				this.state = State.NORMAL;
 			}
 		}
@@ -583,7 +573,10 @@ ObjectController.prototype.openVI = function() {
 		tempTextArea.className = editable.className; 
 
 		// grab TeX markup
-		var TeXMarkup = $(".active annotation").html();
+		if ($(".active annotation").length !== 0)
+			var TeXMarkup = $(".active annotation").html();
+		else
+			var TeXMarkup = $(".active .math").html();
 	
 		tempTextArea.innerHTML = TeXMarkup;
 		$(editable).replaceWith(tempTextArea);
@@ -595,11 +588,14 @@ ObjectController.prototype.openVI = function() {
 			keyMap: "vim",
 			showCursorWhenSelecting: true
 		});
+
 		CodeMirror.on(this.vim, 'vim-saving-done', this.closeVI.bind(this));
 	}
 	else {
 		var tempTextArea = window.document.createElement("TEXTAREA");
 		tempTextArea.className = editable.className; 
+
+		var links = $(editable).find(".object-link");
 
 		tempTextArea.innerHTML = editable.textContent;
 		$(editable).replaceWith(tempTextArea);
@@ -611,6 +607,10 @@ ObjectController.prototype.openVI = function() {
 			keyMap: "vim",
 			showCursorWhenSelecting: true
 		});
+
+		// Save any links onto the this.vim object for re-insertion upon closeVI()
+		this.vim["links"] = links;					
+
 		CodeMirror.on(this.vim, 'vim-saving-done', this.closeVI.bind(this));
 	}
 }
@@ -629,37 +629,54 @@ ObjectController.prototype.closeVI = function(e) {
 	// TODO Patch for the caase in which the text is TeX content, <span> tags shouldn't be applied
 	// 			to math equations
 
-	// Break text into word components
-	var wordComponents = newText.split(/\b/);
+	// Break text into word components for non math content
 
-	// Iterate through each component and if it is a word wrap it with a <span> tag	
-	var spanWrappedWords = _.map(wordComponents, function(component) {
-														if ( ! (/\b/).test(component))
-															return component;
-														var wrappedWord = window.document.createElement("SPAN");
-														wrappedWord.className = "word";
-														wrappedWord.innerHTML = component;		
-														return wrappedWord;
-													},this);
+	if ( /math/.test(this.vim.getTextArea().className) ) {
+		var updatedContent = window.document.createElement("PRE");	
+		var classNames = this.vim.getTextArea().className;
+		updatedContent.className = classNames;
+		$(updatedContent).append(newText);
+		$(this.currentContent).html(updatedContent);
+		try {
+			window.katex.render(updatedContent.innerHTML, updatedContent);	
+		}
+		catch (error) {
+			$(updatedContent).append(newText);
+			$(this.currentContent).html(updatedContent);
+			debugger
+		}
+	}
+	else {
+		var wordComponents = newText.split(/\b/);
 
-	// Create new paragraph tag with span wrapped words
-	var updatedContent = window.document.createElement("P");
-	var classNames = this.vim.getTextArea().className;
-	updatedContent.className = classNames;
-	$(updatedContent).append(spanWrappedWords);
-	$(this.currentContent).html(updatedContent);		
+		// Iterate through each component and if it is a word wrap it with a <span> tag	
+		var spanWrappedWords = _.map(wordComponents, function(component) {
+															if ( ! (/\b/).test(component))
+																return component;
+															var wrappedWord = window.document.createElement("SPAN");
+															wrappedWord.className = "word";
+															wrappedWord.innerHTML = component;		
+															return wrappedWord;
+														},this);
 
-	// remove vim editor
-	this.vim = null;
+		// Create new paragraph tag with span wrapped words
+		var updatedContent = window.document.createElement("PRE");
+		var classNames = this.vim.getTextArea().className;
+		updatedContent.className = classNames;
+		$(updatedContent).append(spanWrappedWords);
+		$(this.currentContent).html(updatedContent);
 
+		// reinsert links if their words are still in the updated text content
+		var links = this.vim.links;
+		_.each(links, function(link) {
+			var linkQuery = String.interpolate(".word:contains('%@'):first", link.innerHTML);
+			$(this.currentContent).find(linkQuery).html(link);
+		},this);
 
-
-
-	// render any math
-	if (classNames.match(/math/))	{
-		window.katex.render(updatedContent.innerHTML, updatedContent);	
 	}
 	
+	// remove vim editor
+	this.vim = null;
 	this.state = State.NORMAL;
 }
 
@@ -721,7 +738,18 @@ ObjectController.prototype.appendMathContent = function() {
 	newContentDiv.appendChild(newContentParagraph);
 
 	$(this.currentContent).after(newContentDiv);
+
+	// GET INDEX OF CURRENTCONTENT (we might be appending content in the middle of the page) SPLICE NEW CONTENT
+	var indexCurrent = $.inArray(this.currentContent, this.contents);
+	if (indexCurrent < this.contents.length - 1)
+		this.contents.splice(indexCurrent+1, 0, newContentDiv);	
+	else 
+		this.contents.push(newContentDiv);
+
 	this.setCurrentContent(newContentDiv);
+
+	// Open vi
+	this.openVI();
 }
 
 ObjectController.prototype.moveDownContent = function() {
@@ -788,10 +816,9 @@ ObjectController.prototype.save = function() {
 		} else
 			data = data + content.outerHTML + "\n";	
 	},this);
-
 	data = data.replace(/active/, "");
 
-	fs.writeFile(this.file, data, function(err) {
+	fs.writeFile(this.object.file, data, function(err) {
 		if (err) throw err;
 		console.log('It\'s saved!');
 	});
@@ -810,23 +837,29 @@ ObjectController.prototype.showLinkOptions = function() {
 			var currentWord = $(".currentWord")[0];
 			var localMenuDiv = window.document.createElement("DIV");
 			localMenuDiv.className = "local-menu-container link-targets";
-			var localMenu = window.Handlebars.helpers.localMenu(this.linkableObjects, "link-option");
+
+
+			// TODO  Patch this, Handlebars helper is SCREWED UP!!!!!!!!!!!!!!!!!!
+			//  I'm passing in an array of objects instead of an array of primitives 
+
+	
+			var localMenu = window.Handlebars.helpers.linkOptions(this.linkableObjects, "link-option");
 			$(localMenuDiv).append(localMenu);
 			$(currentWord).append(localMenuDiv);
 		}.bind(this));	
-	} 
+	}
 	else {	
 		var currentWord = $(".currentWord")[0];
 		var localMenuDiv = window.document.createElement("DIV");
 		localMenuDiv.className = "local-menu-container link-targets";
-		var localMenu = window.Handlebars.helpers.localMenu(this.linkableObjects, "link-option");
+		var localMenu = window.Handlebars.helpers.linkOptions(this.linkableObjects, "link-option");
 		$(localMenuDiv).append(localMenu);
 		$(currentWord).append(localMenuDiv);
 	}
 }
 
 ObjectController.prototype.createLink = function(selectedOption) {
-	var target = $(selectedOption).text();
+	var target = selectedOption[0].dataset.file;
 	var targetText = $("span.currentWord").html();
 	var link   = String.interpolate("<a href='%@' class='object-link'>%@</a>", target, targetText);
 	$("span.currentWord").html(link);
@@ -837,16 +870,16 @@ ObjectController.prototype.getLinkableObjects = function() {
 	var objectTreePath = String.interpolate("%@%@.notes/%@.tree", Constants.PATH, this.app.subject, this.app.subject);
 	d3.json(objectTreePath, function(error, nodes) {
 		var linkableObjects = _.map(Utilities.flattenTree(nodes), function(object) {
-														return object.name;	
+														return { "name": object.name, "file": object.file };	
 													});
 		deferred.resolve(linkableObjects);
 	}.bind(this));
 	return deferred.promise();
 }
 
-ObjectController.prototype.openLink = function(objectName) {
+ObjectController.prototype.openLink = function(selectedObject) {
 	this.keyStrokeStack = [];	
-	this.makeActive({ subject: this.subject, object: objectName });
+	this.makeActive(selectedObject);
 }
 
 ObjectController.prototype.popLink = function() {
@@ -1022,6 +1055,17 @@ window.Handlebars.registerHelper("localMenu", function(items, className) {
 			menu = menu + String.interpolate("<li class='local-menu-item %@ active'>", className) + items[i] + "</li>";
 		else 
 			menu = menu + String.interpolate("<li class='local-menu-item %@'>", className) + items[i] + "</li>";
+	}
+	return menu = menu + "</ul>";
+});
+
+window.Handlebars.registerHelper("linkOptions", function(items) {
+	var menu = "<ul class='local-menu'>";	
+	for (var i=0; i<items.length; i++) {	
+		if (i === 0)
+			menu = menu + String.interpolate("<li class='local-menu-item link-option active' data-file='%@'>%@</li>", items[i].file, items[i].name);
+		else
+			menu = menu + String.interpolate("<li class='local-menu-item link-option' data-file='%@'>%@</li>", items[i].file, items[i].name);
 	}
 	return menu = menu + "</ul>";
 });
