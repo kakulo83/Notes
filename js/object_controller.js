@@ -1,6 +1,8 @@
 var fs = require("fs"); 
 var Constants  = require("./constants.js");
 var Utilities = require("./utilities.js");
+var exec = require('child_process').exec;
+
 
 var State = {
 	NORMAL: 0,
@@ -544,15 +546,33 @@ ObjectController.prototype.handleKeyPress = function(e) {
 ObjectController.prototype.processCommandPrompt = function() {
 	var commandArray = $("#command-prompt").val().split(" ");
 	var option = commandArray[0].toLowerCase();
-	var subjectFromCommandPrompt = commandArray[1] || "";
-	
+	var argument = commandArray[1] || "";
 	switch(option) {
 		case "w":
 			this.save();
 			hideCommandPrompt();			
 			break;
+		case "f":
+			this.globalFind(argument);
+			break;
 		default:			
 	}	
+}
+
+ObjectController.prototype.globalFind = function(term) {
+	myCmd = String.interpolate('ag -a %@ /Users/robertcarter/Documents/VIL/%@.notes/', term, this.app.getSubject());
+	exec(myCmd,  function (error, stdout, stderr) {
+			if (error !== null) {
+				console.log('exec error: ' + error);
+				return;
+			}
+			var searchResultsHtml = $.parseHTML(stdout);
+			var searchResultsDiv = window.document.createElement("DIV");
+
+			searchResultsDiv.className = "searchresults";	
+			$(searchResultsDiv).append(searchResultsHtml);
+			$("#object-container").append(searchResultsDiv);
+		}.bind(this));
 }
 
 ObjectController.prototype.showVisualSelectMenu = function() {
@@ -1066,6 +1086,7 @@ function showYellowSelector() {
 		quicklink.innerHTML = hint;
 		quicklink.className = "quicklink object " + hint;
 		$(allLinks[i]).before(quicklink);	
+
 	}
 }
 
@@ -1086,7 +1107,7 @@ window.Handlebars.registerHelper("localMenu", function(items, className) {
 
 window.Handlebars.registerHelper("linkOptions", function(items) {
 	var menu = "<ul class='local-menu'>";	
-	for (var i=0; i<items.length; i++) {	
+	for (var i=0; i<items.length; i++) {
 		if (i === 0)
 			menu = menu + String.interpolate("<li class='local-menu-item link-option active' data-file='%@'>%@</li>", items[i].file, items[i].name);
 		else

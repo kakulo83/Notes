@@ -1,5 +1,26 @@
 TODO:
 
+
+ADD MECHANISM TO RUN SHELL COMMNANDS AND CONSUME STD-OUT
+
+		- use node 'child-process':  https://nodejs.org/api/child_process.html 
+		- http://stackoverflow.com/questions/26920834/run-shell-command-from-javascript-in-node-webkit
+
+
+ADD IN-PAGE CONTENT SEARCH WITH '/' 
+
+		- use Ag (silver searcher)
+
+ADD GLOBAL CONTENT SEARCH WITH  ':F {term}'
+
+		- use Ag (silver searcher)
+
+ADD GLOBAL OBJECT FILE SEARCH WITH '<Ctrl>P'
+
+
+ADD ABILITY TO EMBED VIDEO IN OBJECT FILES
+
+
 ADD INDEX VIEW
 		
 		- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
@@ -23,10 +44,6 @@ ADD ABILITY TO CREATE WIKI-LINKS
 		- Add a stack structure to store history of Objects viewed so quick navigation
 			backwards can be made using <Ctrl-o> for backwards
 
-ADD ABILITY TO OPEN OTHER NOTES
-
-
-FAIL KATEX GRACEFULLY
 
 
 SYNCRHONIZE TREE MODE NODES WITH OBJECT FILES
@@ -51,3 +68,5 @@ MODIFY THE MODE-MENU
 				(i)mage
 				(v)ideo
 				(m)ath text
+
+ADD ABILITY TO OPEN OTHER NOTES

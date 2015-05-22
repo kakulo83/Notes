@@ -115,6 +115,15 @@ p#menu-prompt-hint {
 #mode-menu-container {
 	display: none;
 }
+.searchresults {
+  position: absolute;
+	padding: 25px;
+  width: 50%;
+  height: 100%;
+	top: 0;
+	right: 0;
+  background: purple;
+}
 
 /**************** tree *********************/
 #orphans-container {
@@ -151,6 +160,7 @@ ul#orphans li.orphan .circle.current {
 }
 
 /**************** object *******************/
+h3#title { margin-top: 0; }
 #title, .content, .content.depth-0 {
 	border-left: solid transparent;
 	padding-left: 80px;
