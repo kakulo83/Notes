@@ -3,7 +3,6 @@ var Constants  = require("./constants.js");
 var Utilities = require("./utilities.js");
 var exec = require('child_process').exec;
 
-
 var State = {
 	NORMAL: 0,
 	MAIN_MENU: 1,
@@ -16,7 +15,8 @@ var State = {
 	FOLDING_CONTENT: 8,
 	COMMANDPROMPT: 9,
 	QUICKLINK: 10,
-	POP_QUICKLINK: 11
+	POP_QUICKLINK: 11,
+	SEARCH_RESULTS: 12
 };
 
 var Menu = {
@@ -32,6 +32,7 @@ var ObjectController = function(app) {
 	d3 = window.d3;
 	_ = window._;
 	CodeMirror = window.CodeMirror;
+	MathJax = window.MathJax;
 
 	this.unsavedData = false;
 	this.contents = []; 
@@ -50,13 +51,22 @@ ObjectController.prototype.makeActive = function(selection) {
 }
 
 ObjectController.prototype.getObjectData = function() {
-	this.contents = [];
 	d3.html(this.object.file, this.renderData.bind(this));
 }
 
 ObjectController.prototype.renderData = function(error, object) {
 	var modeTemplate = Handlebars.templates.object;
 	$("#mode-container").html(modeTemplate());
+
+	// init mutation observer that will watch for content changes
+	var targetNodes = $("#object-container, .text_content, .image_content");
+	var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+	var DOMObserver = new MutationObserver (this.onContentModified.bind(this));
+	var obsConfig = { childList: true, characterData: true, attributes: false, subtree: true };
+
+	targetNodes.each(function () {
+		DOMObserver.observe(this, obsConfig);
+	});
 
 	if (object) {
 		this.contents = $(object).children(".content");
@@ -83,9 +93,6 @@ ObjectController.prototype.renderData = function(error, object) {
 		this.setCurrentContent(new_text);
 	}
 
-	// render math	
-	renderMath();
-
 	// render footer 
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
@@ -93,23 +100,11 @@ ObjectController.prototype.renderData = function(error, object) {
 	};
 	$("footer").html(footerTemplate(footerData));
 
-	// init mutation observer that will watch for content changes
-	var targetNodes         = $("#object-container, .text_content, .image_content");
-	var MutationObserver    = window.MutationObserver || window.WebKitMutationObserver;
-	var myObserver          = new MutationObserver (this.updateData.bind(this));
-	var obsConfig           = { 
-															childList: true,
-															characterData: true, 
-															attributes: false, 
-															subtree: false 
-														};
-
-	targetNodes.each(function () {
-			myObserver.observe (this, obsConfig);
-	});
+	// render math
+	this.renderAllMath();
 }
 
-ObjectController.prototype.updateData = function(mutationRecords) {
+ObjectController.prototype.onContentModified = function(mutationRecords) {
 	mutationRecords.forEach ( function (mutation) {
 		if (mutation.type == "childList") {
 			this.unsavedData = true;
@@ -253,9 +248,9 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				this.state = State.NORMAL;
 				break;	
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				this.processCommandPrompt();				
+				this.processCommandPrompt();
+				// current state is set in processCommandPrompt function
 				hideCommandPrompt();
-				this.state = State.NORMAL;
 				break;
 			default:
 		}
@@ -541,6 +536,9 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			}
 		}
 	}
+	else if (this.state === State.SEARCH_RESULTS) {
+
+	}
 }
 
 ObjectController.prototype.processCommandPrompt = function() {
@@ -550,29 +548,53 @@ ObjectController.prototype.processCommandPrompt = function() {
 	switch(option) {
 		case "w":
 			this.save();
+			this.state = State.NORMAL;
 			hideCommandPrompt();			
 			break;
 		case "f":
 			this.globalFind(argument);
+			this.state = State.SEARCH_RESULTS;
 			break;
 		default:			
 	}	
 }
 
-ObjectController.prototype.globalFind = function(term) {
-	myCmd = String.interpolate('ag -a %@ /Users/robertcarter/Documents/VIL/%@.notes/', term, this.app.getSubject());
+ObjectController.prototype.globalFind = function(query) {
+	myCmd = String.interpolate('ag --ackmate -G "(.object|.process)" --no-numbers -a -C %@ /Users/robertcarter/Documents/VIL/%@.notes/', query, this.app.getSubject());
 	exec(myCmd,  function (error, stdout, stderr) {
-			if (error !== null) {
-				console.log('exec error: ' + error);
-				return;
-			}
-			var searchResultsHtml = $.parseHTML(stdout);
-			var searchResultsDiv = window.document.createElement("DIV");
+		if (error !== null) {
+			console.log('exec error: ' + error);
+			return;
+		}
+		var ackmateParser = require('ackmate-parser');
+		var searchResultsHtml = $.parseHTML(stdout);
 
-			searchResultsDiv.className = "searchresults";	
-			$(searchResultsDiv).append(searchResultsHtml);
-			$("#object-container").append(searchResultsDiv);
-		}.bind(this));
+		var stream = ackmateParser();
+		stream.on(stdout, function(line) {
+			debugger
+		 // for each match in the stream 
+			if(line.hasOwnProperty('length')) {
+				return console.log(line.filename, line.lineNumber, line.index, line.length, line.value);
+			}
+		 
+			// if `ag` was called with `--before` or `--after` 
+			if(line.hasOwnProperty('value')) {
+				return console.log(line.filename, line.lineNumber, line.value);
+			}
+		 
+			// whenever a new file in the stream is encountered 
+			console.log(line.filename);	
+			});	
+
+		debugger	
+		// /Users\/.*/.test(file.textContent)
+		
+		var searchResultsDiv = window.document.createElement("DIV");
+
+		searchResultsDiv.className = "searchresults";	
+		$(searchResultsDiv).append(searchResultsHtml);
+		$("#object-container").append(searchResultsDiv);
+	}.bind(this));
 }
 
 ObjectController.prototype.showVisualSelectMenu = function() {
@@ -607,8 +629,8 @@ ObjectController.prototype.openVI = function() {
 		tempTextArea.className = editable.className; 
 
 		// grab TeX markup
-		if ($(".active annotation").length !== 0)
-			var TeXMarkup = $(".active annotation").html();
+		if ($(".active .math script").length !== 0)
+			var TeXMarkup = "\\(" + $(".active .math script").html() + "\\)";
 		else
 			var TeXMarkup = $(".active .math").html();
 	
@@ -666,18 +688,17 @@ ObjectController.prototype.closeVI = function(e) {
 	// Break text into word components for non math content
 
 	if ( /math/.test(this.vim.getTextArea().className) ) {
-		var updatedContent = window.document.createElement("PRE");	
+		var updatedContent = window.document.createElement("P");	
 		var classNames = this.vim.getTextArea().className;
 		updatedContent.className = classNames;
 		$(updatedContent).append(newText);
 		$(this.currentContent).html(updatedContent);
 		try {
-			window.katex.render(updatedContent.innerHTML, updatedContent);	
+			this.app.renderMath(updatedContent);
 		}
 		catch (error) {
 			$(updatedContent).append(newText);
 			$(this.currentContent).html(updatedContent);
-			debugger
 		}
 	}
 	else {
@@ -706,7 +727,6 @@ ObjectController.prototype.closeVI = function(e) {
 			var linkQuery = String.interpolate(".word:contains('%@'):first", link.innerHTML);
 			$(this.currentContent).find(linkQuery).html(link);
 		},this);
-
 	}
 	
 	// remove vim editor
@@ -840,11 +860,11 @@ ObjectController.prototype.save = function() {
 	var data = "";	
 	_.each(this.contents, function(content) {
 		if ( $(content).find(".editable").hasClass("math") ) {
-			var TeX = $(content).find(".editable annotation").html(); 
+			var TeX = "\\(" + $(content).find(".math script").html() + "\\)";
 			var editable = $(content).find(".editable").clone();
 			$(editable).html(TeX);
 
-		var preRenderedContent = $(content).clone();
+			var preRenderedContent = $(content).clone();
 			$(preRenderedContent).find(".editable").replaceWith(editable);
 			data = data + preRenderedContent[0].outerHTML + "\n";	
 		} else
@@ -951,6 +971,10 @@ ObjectController.prototype.unfoldAllContent = function() {
 	},this);
 }
 
+ObjectController.prototype.renderAllMath = function() {
+	this.app.renderMath();
+}
+
 function nextMenuItem() {
 	var activeMenuItem = $(".local-menu-item.active");
 	var allLocalMenuItems = $(".local-menu-item").toArray();
@@ -1037,13 +1061,6 @@ function hideCommandPrompt() {
 	$("#command-prompt").val("");
 	$("#command-prompt").attr("placeholder", "");
 	$("#command-prompt").attr("disabled", true);
-}
-
-function renderMath() {
-	var mathContent = $(".math");
-	_.each(mathContent, function(equation) {
-		window.katex.render(equation.innerHTML, equation);
-	});	 
 }
 
 function showMenuPrompt(prompt) {

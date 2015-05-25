@@ -23,6 +23,9 @@
         "node", 
         "webkit"
     ], 
+		"dependencies": {
+				"ackmate-parser": "2.0.0"
+		},
     "window": {
         "fullscreen": false, 
         "resizable": false, 

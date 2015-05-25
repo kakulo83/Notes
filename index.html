@@ -6,7 +6,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<link href="./css/style.css" rel="stylesheet" type="text/css">
 		<link href="./css/codemirror.css" rel="stylesheet" type="text/css">
-		<link href="./css/katex.min.css" rel="stylesheet" type="text/css">
 		<link href="./css/tests.css" rel="stylesheet" type="text/css">	
 
 		<!-- Libraries -->
@@ -14,9 +13,16 @@
 		<script src="./lib/underscore.1.8.2.js" type="text/javascript" charset="utf-8"></script>
 		<script src="./lib/handlebars-v3.0.0.js" type="text/javascript" charset="utf-8"></script>
 		<script src="./lib/d3.js" type="text/javascript" charset="utf-8"></script>
-		<script src="./lib/katex.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="./lib/keypress-2.1.0.min.js" type="text/javascript" charset="utf-8"></script>
-	
+		<script type="text/x-mathjax-config">
+			MathJax.Hub.Config({
+				tex2jax: {
+					inlineMath: [["$$","$$"],["\\(","\\)"]]
+				}
+			});
+		</script>
+		<script type="text/javascript" src="./lib/MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>	
+
 		<!-- Compiled Handlebar templates -->	
 		<script src="./templates/tree.tpl.js" type="text/javascript" charset="utf-8"></script>
 		<script src="./templates/process.tpl.js" type="text/javascript" charset="utf-8"></script>

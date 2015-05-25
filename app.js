@@ -24,6 +24,17 @@ $(document).ready(function() {
 	window.Handlebars = Handlebars;
 	window._ = _;
 	window.CodeMirror = CodeMirror;
+
+	/*	
+	MathJax.Hub.Config({
+    jax: ["input/TeX","output/HTML-CSS"],
+    extensions: ["tex2jax.js"],
+    tex2jax: {
+      inlineMath: [ ['\\(','\\)'] ],
+      displayMath: [ ['$$','$$'] ]
+    }
+  });
+	*/
 	
 	win.showDevTools();
 	var subject = gui.App.argv[0];
@@ -98,4 +109,13 @@ App.prototype.toggleMenu = function() {
 	else
 		$("#mode-menu-container").show();
 }
+
+App.prototype.renderMath = function(element) {
+	if (element)
+		MathJax.Hub.Queue(["Typeset", MathJax.Hub, element]);
+	else
+		MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+}
+
+
 

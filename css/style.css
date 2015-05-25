@@ -118,11 +118,15 @@ p#menu-prompt-hint {
 .searchresults {
   position: absolute;
 	padding: 25px;
-  width: 50%;
+  width: 45%;
   height: 100%;
 	top: 0;
 	right: 0;
-  background: purple;
+  background: darkslategray;
+	overflow: hidden;
+}
+.searchresults p.filepath {
+	color: yellow !important;
 }
 
 /**************** tree *********************/
@@ -200,7 +204,7 @@ textarea.editable {
 	resize: none;
 	outline: none;
 }
-.text_content.active, .image_content.active {
+.text_content.active, .image_content.active, .video_content.active {
 	border-left: solid red;
 }
 .image_content img {
