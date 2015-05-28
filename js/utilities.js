@@ -100,3 +100,18 @@ exports.stringNumberToHintString = function(number, numHintDigits) {
 	}
 	return hintString.join("");
 }
+
+exports.parseAckmateString = function(input) {
+	var lines = input.split(/\n/);
+	var output = [];
+	for (var i = 0; i < lines.length; i++) {
+		// if line is filename, create and push new result object into output array		
+		if ( (/^:.*/).test(lines[i]) )
+			output.push({ "file": lines[i].slice(1), "context": [] });
+		// if line is part of the context, push onto context array of last result object
+		else 
+			output[output.length-1]["context"].push(lines[i]);	
+	}
+	return output;
+}
+

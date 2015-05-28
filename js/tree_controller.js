@@ -10,7 +10,8 @@ var State = {
 	SCROLL: 4,  // TODO Add a scroll mode where I can scroll the entire tree if it gets too big
 	MOVE_NODE: 5,
 	MOVE_ORPHAN: 6,
-	ORPHAN: 7
+	ORPHAN: 7,
+	SEARCH_RESULTS: 8
 };
 
 // TreeController is being referenced from app.js as a node module.  This means the javascript
@@ -621,40 +622,44 @@ TreeController.prototype.processCommandPrompt = function() {
 	// options 'w' write, 'x' write and close
 	var commandArray = $("#command-prompt").val().split(" ");
 	var option = commandArray[0].toLowerCase();
-	var subjectFromCommandPrompt = commandArray[1] || null;
+	var argument = commandArray[1] || null;
 
 	switch(option) {
 		case "w":
-			if (subjectFromCommandPrompt) {
-				var directoryPath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/", subjectFromCommandPrompt);
+			if (argument) {
+				var directoryPath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/", argument);
 	
 				// check if the directory exists			
 				fs.realpath(directoryPath, function(err, resolvedPath) {
 					// directory exists; write to it
 					if (!err) {
-						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subjectFromCommandPrompt, subjectFromCommandPrompt);
+						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", argument, argument);
 						writeToFile(file, this.chart.nodes());
 					}
 					// directory nonexistant;  create it first then write to it
 					else {
 						var directoryPath = arguments[0];
 						fs.mkdirSync(directoryPath);
-						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subjectFromCommandPrompt, subjectFromCommandPrompt);
+						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", argument, argument);
 						writeToFile(filePath, this.chart.nodes());
 					}
-				}.bind(this, directoryPath, subjectFromCommandPrompt));
+				}.bind(this, directoryPath, argument));
 
-				this.subject = subjectFromCommandPrompt;			
+				this.subject = argument;			
 			}
 			else if (this.subject) {
 				var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", this.subject, this.subject);
 				writeToFile(filePath, this.chart.nodes());
 			}
 			else {
-				// this.subject AND subjectFromCommandPrompt are null
+				// this.subject AND argument are null
 				//
 				// show warning
 			}
+			break;
+		case "f":
+			this.app.globalFind(argument);
+			this.state = State.SEARCH_RESULTS;
 			break;
 	}
 }

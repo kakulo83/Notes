@@ -25,7 +25,7 @@ var Menu = {
 	WORD: 2
 }
 
-var ObjectController = function(app) { 
+var ObjectController = function(app) {
 	this.app = app;
 	$ = window.$;
 	Handlebars = window.Handlebars;
@@ -62,7 +62,7 @@ ObjectController.prototype.renderData = function(error, object) {
 	var targetNodes = $("#object-container, .text_content, .image_content");
 	var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
 	var DOMObserver = new MutationObserver (this.onContentModified.bind(this));
-	var obsConfig = { childList: true, characterData: true, attributes: false, subtree: true };
+	var obsConfig = { childList: false, characterData: true, attributes: false, subtree: false };
 
 	targetNodes.each(function () {
 		DOMObserver.observe(this, obsConfig);
@@ -537,7 +537,21 @@ ObjectController.prototype.handleKeyPress = function(e) {
 		}
 	}
 	else if (this.state === State.SEARCH_RESULTS) {
-
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				this.state = State.NORMAL;	
+				$(".searchresults").remove();		
+				break;
+			case Constants.KeyEvent.DOM_VK_J:
+				this.moveDownSearchResult();			
+				break;
+			case Constants.KeyEvent.DOM_VK_K:
+				this.moveUpSearchResult();		
+				break;
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				this.openSearchMatch();
+				break;
+		}
 	}
 }
 
@@ -552,49 +566,60 @@ ObjectController.prototype.processCommandPrompt = function() {
 			hideCommandPrompt();			
 			break;
 		case "f":
-			this.globalFind(argument);
+			this.app.globalFind(argument);
 			this.state = State.SEARCH_RESULTS;
 			break;
 		default:			
-	}	
+	}
 }
 
+// TODO Find out why app.js can't use String.interpolate
 ObjectController.prototype.globalFind = function(query) {
 	myCmd = String.interpolate('ag --ackmate -G "(.object|.process)" --no-numbers -a -C %@ /Users/robertcarter/Documents/VIL/%@.notes/', query, this.app.getSubject());
-	exec(myCmd,  function (error, stdout, stderr) {
+	exec(myCmd,  function (query, error, stdout, stderr) {
 		if (error !== null) {
 			console.log('exec error: ' + error);
 			return;
 		}
-		var ackmateParser = require('ackmate-parser');
-		var searchResultsHtml = $.parseHTML(stdout);
-
-		var stream = ackmateParser();
-		stream.on(stdout, function(line) {
-			debugger
-		 // for each match in the stream 
-			if(line.hasOwnProperty('length')) {
-				return console.log(line.filename, line.lineNumber, line.index, line.length, line.value);
-			}
-		 
-			// if `ag` was called with `--before` or `--after` 
-			if(line.hasOwnProperty('value')) {
-				return console.log(line.filename, line.lineNumber, line.value);
-			}
-		 
-			// whenever a new file in the stream is encountered 
-			console.log(line.filename);	
-			});	
-
-		debugger	
-		// /Users\/.*/.test(file.textContent)
-		
+		var searchResults = Utilities.parseAckmateString(stdout);
 		var searchResultsDiv = window.document.createElement("DIV");
-
 		searchResultsDiv.className = "searchresults";	
-		$(searchResultsDiv).append(searchResultsHtml);
-		$("#object-container").append(searchResultsDiv);
-	}.bind(this));
+
+		// Iterate through each result
+		for (var i=0; i<searchResults.length; i++) {
+			// show the file path
+			var matchDiv = window.document.createElement("DIV");
+			matchDiv.className = "search-match";
+			var file = window.document.createElement("P");
+			file.className = "filepath";
+			file.innerHTML = searchResults[i].file;
+			$(matchDiv).append(file);
+			var context = searchResults[i].context;	
+			// show the context
+			for (var j=0; j<context.length; j++) {
+				// check if context contains location indices (40 4:<h3 ...</h3>)
+				if ( (/^\d+\s+\d+\:.*/).test(context[j]) ) {
+					var match = $(context[j].split(":")[1]);
+					$(match).removeClass();
+					match = match[0].outerHTML.replace(query, String.interpolate("<span class='query-match'>%@</span>", query));
+					$(matchDiv).append(match);
+				}
+				else {
+					var additionalContext = context[j];
+					$(additionalContext).removeClass();
+					$(additionalContext).children().removeClass();
+					$(matchDiv).append(additionalContext);
+					$(matchDiv).find("div").removeClass();
+					$(matchDiv).find("p:not(:first)").removeClass().attr("id", "");
+					$(matchDiv).find("h3").removeClass().attr("id", "");		
+				}
+			}
+			$(searchResultsDiv).append(matchDiv);
+		}
+		$("#mode-container").append(searchResultsDiv);
+
+		this.app.renderMath(searchResultsDiv);
+	}.bind(this, query) );
 }
 
 ObjectController.prototype.showVisualSelectMenu = function() {
@@ -709,7 +734,7 @@ ObjectController.prototype.closeVI = function(e) {
 															if ( ! (/\b/).test(component))
 																return component;
 															var wrappedWord = window.document.createElement("SPAN");
-															wrappedWord.className = "word";
+															//wrappedWord.className = "word";
 															wrappedWord.innerHTML = component;		
 															return wrappedWord;
 														},this);
@@ -804,6 +829,39 @@ ObjectController.prototype.appendMathContent = function() {
 
 	// Open vi
 	this.openVI();
+}
+
+ObjectController.prototype.openSearchMatch = function() {
+	var filepath = $(".search-match.active .filepath").text();
+	var fileExtension = /[^.]+$/.exec(filepath)[0];
+	var fileName = filepath.replace(/^.*[\\\/]/, '');
+
+	switch (fileExtension) {
+		case Constants.FILETYPE.OBJECT:
+			var selection = { "name": fileName, "file": filepath };
+			this.makeActive(selection);
+			break;
+		case Constants.FILETYPE.PROCESS:
+
+			break;	
+	}
+}
+
+ObjectController.prototype.moveDownSearchResult = function() {
+	var nextSearchMatch = $(".search-match.active").next();
+	if (nextSearchMatch.length === 0) { nextSearchMatch = $(".search-match:first-child"); }
+	$(".search-match.active").removeClass("active");
+	$(nextSearchMatch).addClass("active");
+	var boundingRect = nextSearchMatch[0].getBoundingClientRect();
+	$(".search-match.active")[0].scrollIntoView({block: "end"});
+}
+
+ObjectController.prototype.moveUpSearchResult = function() {
+	var prevSearchMatch = $(".search-match.active").prev();
+	if (prevSearchMatch.length === 0) { prevSearchMatch = $(".search-match:last-child"); }
+	$(".search-match.active").removeClass("active");
+	$(prevSearchMatch).addClass("active");
+	$(".search-match.active")[0].scrollIntoView({block: "top"});
 }
 
 ObjectController.prototype.moveDownContent = function() {
@@ -1103,7 +1161,6 @@ function showYellowSelector() {
 		quicklink.innerHTML = hint;
 		quicklink.className = "quicklink object " + hint;
 		$(allLinks[i]).before(quicklink);	
-
 	}
 }
 

@@ -4,7 +4,9 @@ var nativeMenuBar = new gui.Menu({ type: "menubar" });
 
 var fs = require("fs");
 var util = require("util");
+var exec = require('child_process').exec;
 
+var Utilities = require("./js/utilities.js");
 var Constants = require("./js/constants.js");
 var TreeController = require("./js/tree_controller.js");
 var ObjectController = require("./js/object_controller.js");
@@ -24,18 +26,6 @@ $(document).ready(function() {
 	window.Handlebars = Handlebars;
 	window._ = _;
 	window.CodeMirror = CodeMirror;
-
-	/*	
-	MathJax.Hub.Config({
-    jax: ["input/TeX","output/HTML-CSS"],
-    extensions: ["tex2jax.js"],
-    tex2jax: {
-      inlineMath: [ ['\\(','\\)'] ],
-      displayMath: [ ['$$','$$'] ]
-    }
-  });
-	*/
-	
 	win.showDevTools();
 	var subject = gui.App.argv[0];
 	app = new App();	
@@ -108,6 +98,56 @@ App.prototype.toggleMenu = function() {
 		$("#mode-menu-container").hide();
 	else
 		$("#mode-menu-container").show();
+}
+
+App.prototype.globalFind = function(query) {
+	myCmd = 'ag --ackmate -G "(.object|.process)" --no-numbers -a -C ' + query + ' /Users/robertcarter/Documents/VIL/' + this.getSubject() + '.notes/';
+	exec(myCmd,  function (query, error, stdout, stderr) {
+
+		if (error !== null) {
+			console.log('exec error: ' + error);
+			return;
+		}
+		var searchResults = Utilities.parseAckmateString(stdout);
+		var searchResultsDiv = window.document.createElement("DIV");
+		searchResultsDiv.className = "searchresults";	
+
+		// Iterate through each result
+		for (var i=0; i<searchResults.length; i++) {
+			// show the file path
+			var matchDiv = window.document.createElement("DIV");
+			matchDiv.className = "search-match";
+			var file = window.document.createElement("P");
+			file.className = "filepath";
+			file.innerHTML = searchResults[i].file;
+			$(matchDiv).append(file);
+			var context = searchResults[i].context;	
+			// show the context
+			for (var j=0; j<context.length; j++) {
+				// check if context contains location indices (40 4:<h3 ...</h3>)
+				if ( (/^\d+.*\:.*/).test(context[j]) ) { 
+					var match = $(context[j].split(":")[1]);
+					$(match).removeClass();
+					match = match[0].outerHTML.replace(query, "<span class='query-match'>" + query + "</span>");
+					$(matchDiv).append(match);
+				}
+				else {
+					var additionalContext = context[j];
+					$(additionalContext).removeClass();
+					$(additionalContext).children().removeClass();
+					$(matchDiv).append(additionalContext);
+					$(matchDiv).find("div").removeClass().removeAttr("data-depth");
+					$(matchDiv).find("p:not(:first)").removeClass().attr("id", "");
+					$(matchDiv).find("h3").removeClass().attr("id", "");
+				}
+			}
+			$(searchResultsDiv).append(matchDiv);
+		}
+		$(searchResultsDiv).find(".search-match:first-child").addClass("active");
+		$("#mode-container").append(searchResultsDiv);
+
+		this.renderMath(searchResultsDiv);
+	}.bind(this, query) );
 }
 
 App.prototype.renderMath = function(element) {

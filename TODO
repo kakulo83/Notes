@@ -1,35 +1,12 @@
 TODO:
 
-SWAP KATEX FOR MATHJAX:
-
-		- <script src="../MathJax/MathJax.js">
-				MathJax.Hub.Config({
-					jax: ["input/TeX","output/HTML-CSS"],
-					extensions: ["tex2jax.js"],
-					tex2jax: {
-						inlineMath: [ ['\\(','\\)'] ],
-						displayMath: [ ['$$','$$'] ]
-					}
-				});
-
-				function doOnLoad() {
-					var div = MathJax.HTML.Element(
-								"div",
-								{id: "MathDiv", style:{border:"1px solid", padding:"5px"}},
-								["Here is math: \\(x^2+1\\)",["br"],"and a display $$x+1\\over x-1$$"]
-							);
-					document.body.appendChild(div);
-					// This does not seem needed but you can use if to force rendering of a div
-					// MathJax.Hub.Queue(["Typeset",MathJax.Hub,'MathDiv']);
-				}
-			</script>
 
 
+ADD GLOBAL OBJECT FILE SEARCH WITH '<Ctrl>P'
 
-ADD MECHANISM TO RUN SHELL COMMNANDS AND CONSUME STD-OUT
+		- Add ability to search multiple words i.e  "Cheat Sheet"
 
-		- use node 'child-process':  https://nodejs.org/api/child_process.html 
-		- http://stackoverflow.com/questions/26920834/run-shell-command-from-javascript-in-node-webkit
+		- Fix problem of highlighting multi
 
 
 ADD IN-PAGE CONTENT SEARCH WITH '/' 
@@ -39,11 +16,6 @@ ADD IN-PAGE CONTENT SEARCH WITH '/'
 ADD GLOBAL CONTENT SEARCH WITH  ':F {term}'
 
 		- use Ag (silver searcher)
-
-ADD GLOBAL OBJECT FILE SEARCH WITH '<Ctrl>P'
-
-
-ADD ABILITY TO EMBED VIDEO IN OBJECT FILES
 
 
 ADD INDEX VIEW
@@ -68,7 +40,6 @@ ADD ABILITY TO CREATE WIKI-LINKS
 
 		- Add a stack structure to store history of Objects viewed so quick navigation
 			backwards can be made using <Ctrl-o> for backwards
-
 
 
 SYNCRHONIZE TREE MODE NODES WITH OBJECT FILES
