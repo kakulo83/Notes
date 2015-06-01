@@ -8,6 +8,7 @@ var exec = require('child_process').exec;
 
 var Utilities = require("./js/utilities.js");
 var Constants = require("./js/constants.js");
+var IndexController = require("./js/index_controller.js");
 var TreeController = require("./js/tree_controller.js");
 var ObjectController = require("./js/object_controller.js");
 var ProcessController = require("./js/process_controller.js");
@@ -48,6 +49,7 @@ App.prototype.init = function(subject) {
 	this.getObject = function() { return this.object; };
 	this.setObject = function(newObject) { this.object= newObject; };
 
+	this.index_controller   = new IndexController(this, subject, window);
 	this.tree_controller    = new TreeController(this, subject, window);
 	this.object_controller  = new ObjectController(this, window);
 	this.process_controller = new ProcessController(this, window);
@@ -59,6 +61,9 @@ App.prototype.init = function(subject) {
 App.prototype.changeMode = function(mode, selection) {
 	this.setMode(mode);
 	switch(mode) {
+		case Constants.Mode.INDEX:
+			this.index_controller.makeActive();
+			break;
 		case Constants.Mode.TREE:
 			this.tree_controller.makeActive();
 			break;
@@ -79,6 +84,9 @@ App.prototype.handleKeyPress = function(e) {
 	//console.log("Character code: " + charCode);
 
 	switch(this.getMode()) {
+		case Constants.Mode.INDEX:
+			this.index_controller.handleKeyPress(e);
+			break;
 		case Constants.Mode.TREE:
 			this.tree_controller.handleKeyPress(e);
 			break;
@@ -102,52 +110,90 @@ App.prototype.toggleMenu = function() {
 
 App.prototype.globalFind = function(query) {
 	myCmd = 'ag --ackmate -G "(.object|.process)" --no-numbers -a -C ' + query + ' /Users/robertcarter/Documents/VIL/' + this.getSubject() + '.notes/';
-	exec(myCmd,  function (query, error, stdout, stderr) {
 
+	var deferred = $.Deferred();
+
+	exec(myCmd,  function (query, deferred, error, stdout, stderr) {
 		if (error !== null) {
 			console.log('exec error: ' + error);
-			return;
+			deferred.reject();
+		}
+		if (! stdout) {
+			deferred.resolve(false);
 		}
 		var searchResults = Utilities.parseAckmateString(stdout);
-		var searchResultsDiv = window.document.createElement("DIV");
-		searchResultsDiv.className = "searchresults";	
+		this.renderSearchResults(searchResults, query);
+		deferred.resolve(true);
+	}.bind(this, query, deferred));
+	return deferred;
+}
 
-		// Iterate through each result
-		for (var i=0; i<searchResults.length; i++) {
-			// show the file path
-			var matchDiv = window.document.createElement("DIV");
-			matchDiv.className = "search-match";
-			var file = window.document.createElement("P");
-			file.className = "filepath";
-			file.innerHTML = searchResults[i].file;
-			$(matchDiv).append(file);
-			var context = searchResults[i].context;	
-			// show the context
-			for (var j=0; j<context.length; j++) {
-				// check if context contains location indices (40 4:<h3 ...</h3>)
-				if ( (/^\d+.*\:.*/).test(context[j]) ) { 
-					var match = $(context[j].split(":")[1]);
-					$(match).removeClass();
-					match = match[0].outerHTML.replace(query, "<span class='query-match'>" + query + "</span>");
-					$(matchDiv).append(match);
-				}
-				else {
-					var additionalContext = context[j];
-					$(additionalContext).removeClass();
-					$(additionalContext).children().removeClass();
-					$(matchDiv).append(additionalContext);
-					$(matchDiv).find("div").removeClass().removeAttr("data-depth");
-					$(matchDiv).find("p:not(:first)").removeClass().attr("id", "");
-					$(matchDiv).find("h3").removeClass().attr("id", "");
-				}
+App.prototype.renderSearchResults = function(searchResults, query) {
+	var searchResultsDiv = window.document.createElement("DIV");
+	searchResultsDiv.className = "searchresults";	
+
+	var queryHeader = window.document.createElement("H3");
+	queryHeader.innerHTML = "Results for: " + query;
+	$(searchResultsDiv).append(queryHeader);
+
+	var searchMatchesContainer = window.document.createElement("DIV");
+	searchMatchesContainer.className = "search-matches-container";
+	$(searchResultsDiv).append(searchMatchesContainer);
+
+	// Iterate through each result
+	for (var i=0; i<searchResults.length; i++) {
+		// show the file path
+		var matchDiv = window.document.createElement("DIV");
+		matchDiv.className = "search-match";
+		var file = window.document.createElement("P");
+		file.className = "filepath";
+		file.innerHTML = searchResults[i].file;
+		$(matchDiv).append(file);
+		var context = searchResults[i].context;	
+		// show the context
+
+		var classPattern = /class=[',\"]([\w- ])*[',\"]/g;
+		var idPattern = /id=[',\"]([\w- ])*[',\"]/g;
+		for (var j=0; j<context.length; j++) {
+			// check if context contains location indices (40 4:<h3 ...</h3>)
+			if ( (/^\d+.*\:.*/).test(context[j]) ) { 
+				var strippedContext = context[j].split(":")[1].replace(classPattern, "").replace(idPattern, "");
+				strippedContext.replace(query, "<span class='query-match'>" + query + "</span>");
+				$(matchDiv).append(strippedContext);
 			}
-			$(searchResultsDiv).append(matchDiv);
-		}
-		$(searchResultsDiv).find(".search-match:first-child").addClass("active");
-		$("#mode-container").append(searchResultsDiv);
+			else {
+				var additionalContext = context[j].replace(classPattern, "").replace(idPattern, "");
+				$(matchDiv).append(additionalContext);
 
-		this.renderMath(searchResultsDiv);
-	}.bind(this, query) );
+				/*
+				$(matchDiv).find("div").removeClass().removeAttr("data-depth");
+				$(matchDiv).find("p:not(:first)").removeClass().attr("id", "");
+				$(matchDiv).find("h3").removeClass().attr("id", "");
+				*/
+			}
+		}
+		$(searchMatchesContainer).append(matchDiv);
+	}
+	$(searchResultsDiv).find(".search-match").first().addClass("active");
+	$("#mode-container").append(searchResultsDiv);
+	this.renderMath(searchResultsDiv);
+}
+
+App.prototype.moveDownSearchResult = function() {
+	var nextSearchMatch = $(".search-match.active").next();
+	if (nextSearchMatch.length === 0) { nextSearchMatch = $(".search-match").first(); }
+	$(".search-match.active").removeClass("active");
+	$(nextSearchMatch).addClass("active");
+	var boundingRect = nextSearchMatch[0].getBoundingClientRect();
+	$(".search-match.active")[0].scrollIntoView({block: "end"});
+}
+
+App.prototype.moveUpSearchResult = function() {
+	var prevSearchMatch = $(".search-match.active").prev();
+	if (prevSearchMatch.length === 0) { prevSearchMatch = $(".search-match").last(); }
+	$(".search-match.active").removeClass("active");
+	$(prevSearchMatch).addClass("active");
+	$(".search-match.active")[0].scrollIntoView({block: "top"});
 }
 
 App.prototype.renderMath = function(element) {
@@ -157,5 +203,21 @@ App.prototype.renderMath = function(element) {
 		MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 }
 
+App.prototype.openMatch = function() {
+	// determine match file type and open appropriate mode
+	var filepath = $(".search-match.active .filepath").text();
+	var fileExtension = /[^.]+$/.exec(filepath)[0];
+	var fileName = filepath.replace(/^.*[\\\/]/, '');
 
+	switch (fileExtension) {
+		case Constants.FILETYPE.OBJECT:
+			var selection = { "name": fileName, "file": filepath };
+			this.changeMode(Constants.Mode.OBJECT, selection);
+			break;
+		case Constants.FILETYPE.PROCESS:
+			var selection = { "name": fileName, "file": filepath };
+			this.changeMode(Constants.Mode.PROCESS, selection);
+			break;
+	}
+}
 

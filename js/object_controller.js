@@ -40,6 +40,9 @@ var ObjectController = function(app) {
 	this.currentContent = null;
 	this.linkableObjects = [];
 	this.keyStrokeStack = [];
+
+	
+
 };
 
 ObjectController.prototype.makeActive = function(selection) {
@@ -58,7 +61,7 @@ ObjectController.prototype.renderData = function(error, object) {
 	var modeTemplate = Handlebars.templates.object;
 	$("#mode-container").html(modeTemplate());
 
-	// init mutation observer that will watch for content changes
+	// Init mutation observer that will watch for content changes
 	var targetNodes = $("#object-container, .text_content, .image_content");
 	var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
 	var DOMObserver = new MutationObserver (this.onContentModified.bind(this));
@@ -67,6 +70,23 @@ ObjectController.prototype.renderData = function(error, object) {
 	targetNodes.each(function () {
 		DOMObserver.observe(this, obsConfig);
 	});
+
+	// Init drag-and-drop 
+
+	window.ondragover = function(e) { e.preventDefault(); return false };
+	window.ondrop = this.onDrop.bind(this); 
+
+	var droppableDiv = $("#object-container")[0];
+	
+	droppableDiv.ondragover = function () { this.className = 'hover'; return false; };
+	droppableDiv.ondragleave = function () { this.className = ''; return false; };
+	droppableDiv.ondrop = function (e) {
+		debugger
+		e.preventDefault();
+
+		return false;
+	};
+
 
 	if (object) {
 		this.contents = $(object).children(".content");
@@ -104,6 +124,21 @@ ObjectController.prototype.renderData = function(error, object) {
 	this.renderAllMath();
 }
 
+ObjectController.prototype.onDrop = function(e) {
+	e.preventDefault();
+	var file = e.dataTransfer.files[0];
+
+	if (! /image|video/.test(file.type)) return;
+
+	var destination = Constants.PATH + this.app.getSubject() + ".notes/data/" + file.name;
+	var mvFileCommand = String.interpolate("mv %@ %@", file.path, destination);
+	
+	exec(mvFileCommand, function (destination, error, stdout, stderr) {
+    if (error !== null) { console.log('exec error: ' + error); }
+		this.appendImageContent(destination);
+	}.bind(this, destination));
+}
+
 ObjectController.prototype.onContentModified = function(mutationRecords) {
 	mutationRecords.forEach ( function (mutation) {
 		if (mutation.type == "childList") {
@@ -131,7 +166,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 					this.state = State.QUICKLINK;
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
-				// Insert object 
+				this.app.changeMode(Constants.Mode.INDEX, null);
 				break;
 			case Constants.KeyEvent.DOM_VK_J:
 				// Move down content
@@ -543,13 +578,13 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				$(".searchresults").remove();		
 				break;
 			case Constants.KeyEvent.DOM_VK_J:
-				this.moveDownSearchResult();			
+				this.app.moveDownSearchResult();			
 				break;
 			case Constants.KeyEvent.DOM_VK_K:
-				this.moveUpSearchResult();		
+				this.app.moveUpSearchResult();		
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				this.openSearchMatch();
+				this.app.openMatch();
 				break;
 		}
 	}
@@ -566,60 +601,16 @@ ObjectController.prototype.processCommandPrompt = function() {
 			hideCommandPrompt();			
 			break;
 		case "f":
-			this.app.globalFind(argument);
-			this.state = State.SEARCH_RESULTS;
+			var performSearch = this.app.globalFind(argument);
+			performSearch.done(function(haveResults) {
+				if (haveResults)
+					this.state = State.SEARCH_RESULTS;
+				else
+					this.state = State.NORMAL;
+			}.bind(this));
 			break;
-		default:			
+		default:
 	}
-}
-
-// TODO Find out why app.js can't use String.interpolate
-ObjectController.prototype.globalFind = function(query) {
-	myCmd = String.interpolate('ag --ackmate -G "(.object|.process)" --no-numbers -a -C %@ /Users/robertcarter/Documents/VIL/%@.notes/', query, this.app.getSubject());
-	exec(myCmd,  function (query, error, stdout, stderr) {
-		if (error !== null) {
-			console.log('exec error: ' + error);
-			return;
-		}
-		var searchResults = Utilities.parseAckmateString(stdout);
-		var searchResultsDiv = window.document.createElement("DIV");
-		searchResultsDiv.className = "searchresults";	
-
-		// Iterate through each result
-		for (var i=0; i<searchResults.length; i++) {
-			// show the file path
-			var matchDiv = window.document.createElement("DIV");
-			matchDiv.className = "search-match";
-			var file = window.document.createElement("P");
-			file.className = "filepath";
-			file.innerHTML = searchResults[i].file;
-			$(matchDiv).append(file);
-			var context = searchResults[i].context;	
-			// show the context
-			for (var j=0; j<context.length; j++) {
-				// check if context contains location indices (40 4:<h3 ...</h3>)
-				if ( (/^\d+\s+\d+\:.*/).test(context[j]) ) {
-					var match = $(context[j].split(":")[1]);
-					$(match).removeClass();
-					match = match[0].outerHTML.replace(query, String.interpolate("<span class='query-match'>%@</span>", query));
-					$(matchDiv).append(match);
-				}
-				else {
-					var additionalContext = context[j];
-					$(additionalContext).removeClass();
-					$(additionalContext).children().removeClass();
-					$(matchDiv).append(additionalContext);
-					$(matchDiv).find("div").removeClass();
-					$(matchDiv).find("p:not(:first)").removeClass().attr("id", "");
-					$(matchDiv).find("h3").removeClass().attr("id", "");		
-				}
-			}
-			$(searchResultsDiv).append(matchDiv);
-		}
-		$("#mode-container").append(searchResultsDiv);
-
-		this.app.renderMath(searchResultsDiv);
-	}.bind(this, query) );
 }
 
 ObjectController.prototype.showVisualSelectMenu = function() {
@@ -845,23 +836,6 @@ ObjectController.prototype.openSearchMatch = function() {
 
 			break;	
 	}
-}
-
-ObjectController.prototype.moveDownSearchResult = function() {
-	var nextSearchMatch = $(".search-match.active").next();
-	if (nextSearchMatch.length === 0) { nextSearchMatch = $(".search-match:first-child"); }
-	$(".search-match.active").removeClass("active");
-	$(nextSearchMatch).addClass("active");
-	var boundingRect = nextSearchMatch[0].getBoundingClientRect();
-	$(".search-match.active")[0].scrollIntoView({block: "end"});
-}
-
-ObjectController.prototype.moveUpSearchResult = function() {
-	var prevSearchMatch = $(".search-match.active").prev();
-	if (prevSearchMatch.length === 0) { prevSearchMatch = $(".search-match:last-child"); }
-	$(".search-match.active").removeClass("active");
-	$(prevSearchMatch).addClass("active");
-	$(".search-match.active")[0].scrollIntoView({block: "top"});
 }
 
 ObjectController.prototype.moveDownContent = function() {

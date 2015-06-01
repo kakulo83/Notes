@@ -33,6 +33,9 @@ body {
 #mode-container p {
 	color: inherit;
 }
+#main-pane.INDEX {
+	background-color: red;
+}
 #main-pane.TREE {
 	background-color: blue;
 }
@@ -65,9 +68,9 @@ footer {
 #status-line .mode {
 	text-transform: uppercase;
 }
-#status-line .mode.NORMAL {
-	background-color: rgb(175,215,25);
-	color: rgb(46,86,8);
+#status-line .mode.INDEX {
+	background-color: red;
+	color: white;
 }
 #status-line .mode.TREE {
 	background-color: blue;
@@ -122,7 +125,7 @@ p#menu-prompt-hint {
   height: 100%;
 	top: 0;
 	right: 0;
-  background: darkslategray;
+  background: midnightblue;
 	overflow-y: scroll;
 	overflow-x: hidden;
 }
@@ -146,6 +149,27 @@ p#menu-prompt-hint {
 	color: red;
 }
 
+/**************** index *********************/
+.object.indent-0 {
+color: purple;
+font-size: 20px;
+padding-left: 10px;
+}
+.object.indent-1 {
+color: red;
+font-size: 16px;
+padding-left: 20px;
+}
+.object.indent-2 { 
+font-size: 12px;
+padding-left: 30px;
+}
+.object.indent-3 { 
+padding-left: 40px;
+}
+.object.indent-4 { 
+padding-left: 50px;
+}
 /**************** tree *********************/
 #orphans-container {
   position: fixed;
@@ -256,7 +280,7 @@ img {
   position: absolute;
 }
 a.object-link {
-  color: #4886b9;
+  color: blue;
   text-decoration: none;
 }
 

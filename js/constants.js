@@ -1,7 +1,7 @@
 var PATH = "/Users/robertcarter/Documents/VIL/";
 
 var Mode = {
-	NORMAL:		 { toString: function() { return "NORMAL"; }, value: 0 },
+	INDEX:		 { toString: function() { return "INDEX"; }, value: 0 },
 	TREE:      { toString: function() { return "TREE"; }, value: 1 },
 	PROCESS:   { toString: function() { return "PROCESS"; }, value: 2 },
 	OBJECT:    { toString: function() { return "OBJECT"; }, value: 3 }

@@ -1,68 +1,62 @@
-TODO:
+**************************************** FEATURES TO ADD **************************************** 
 
+		add index view
+			- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
+				like content in an object view 
 
+		add global object file search with '<cTRL>p'
+			- Add ability to search multiple words i.e  "Cheat Sheet"
+			- Fix problem of highlighting multi word queries
 
-ADD GLOBAL OBJECT FILE SEARCH WITH '<Ctrl>P'
+		add ability to move tree-nodes (and their children) to new locations without having to make them orphans
 
-		- Add ability to search multiple words i.e  "Cheat Sheet"
-
-		- Fix problem of highlighting multi
-
-
-ADD IN-PAGE CONTENT SEARCH WITH '/' 
-
-		- use Ag (silver searcher)
-
-ADD GLOBAL CONTENT SEARCH WITH  ':F {term}'
-
-		- use Ag (silver searcher)
-
-
-ADD INDEX VIEW
+		syncrhonize tree mode nodes with object files
+			- Add prompt when I try to delete a tree node, the implication being that the corresponding
+				node.object file will be deleted	
 		
-		- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
-			like content in an object view 
+		modify the mode-menu
+			- (A)ppend content should be entry point to adding new content.  If "a" is pressed, a 
+				new menu should replace the current mode-menu with the type of contents that can be added:
+		
+							(t)ext
+							(i)mage
+							(v)ideo
+							(m)ath text
 
-START APPLICATION FROM CMD-LINE WITH/WITHOUT SUBJECT
+		add in-page content search with '/' 
+			- use Ag (silver searcher)
 
-START APPLICATION FROM EXECUTABLE ICON (NO SUBJECT)
+		add additional hot-key navigation
+			- Shift+H, Shift+M, Shift_L should move the current content to HIGH/MIDDLE/LOW positions
+			- gg should set the first content as the current content, and shift the page accordingly
+			- G should set the last content as the current content, and shift the page accordingly
 
-ADD KEY 'FILE' TO DATA MODEL
-
-
-ADD ABILITY TO CREATE WIKI-LINKS
-
-		- Add vimium like mechanism for navigating to links using "f" key to show yellow
-			quicklink letters
-
-						- pressing uppercase "F" and navigating to the link will Pop 
-							open a new Window with the content
-
-		- Add a stack structure to store history of Objects viewed so quick navigation
+		add ability to create wiki-links
+			- Add vimium like mechanism for navigating to links using "f" key to show yellow
+				quicklink letters
+							- pressing uppercase "F" and navigating to the link will Pop 
+								open a new Window with the content
+			- Add a stack structure to store history of Objects viewed so quick navigation
 			backwards can be made using <Ctrl-o> for backwards
 
+		add ability to open other notes
 
-SYNCRHONIZE TREE MODE NODES WITH OBJECT FILES
+		start application from cmd-line with/without subject
 
-		- Add prompt when I try to delete a tree node, the implication being that the corresponding
-			node.object file will be deleted	
+		start application from executable icon (no subject)
 
+		refactor object_controller makeactive
+			- refactor object_controller.js makeActive function to simply accept a full filepath instead of "selection"
+				which is an object of type:  { "name": objectName, "file": filePath }
 
-ADD ADDITIONAL HOT-KEY NAVIGATION
-		- Shift+H, Shift+M, Shift_L should move the current content to HIGH/MIDDLE/LOW positions
-
-		- gg should set the first content as the current content, and shift the page accordingly
-
-		- G should set the last content as the current content, and shift the page accordingly
+		add code_content type
+			- colorize each languages differently (mimic railscasts)
 
 
-MODIFY THE MODE-MENU
-		- (A)ppend content should be entry point to adding new content.  If "a" is pressed, a 
-			new menu should replace the current mode-menu with the type of contents that can be added:
-		
-				(t)ext
-				(i)mage
-				(v)ideo
-				(m)ath text
+******************************************  FIXES  ***************************************** 
 
-ADD ABILITY TO OPEN OTHER NOTES
+		- collapsing the title screws up the page's contents
+		- on object page "mary" 
+					1.  collapsing any of the middle math contents 
+					2.  re-expand the maht contents, the remainder contents will still be set to display: none;
+

@@ -41,6 +41,7 @@ var TreeController = function(app, subject, window) {
 }
 
 TreeController.prototype.makeActive = function() {
+	this.state = State.NORMAL;
 	if (this.chart.nodes()) //if (this.chart) 
 		this.renderView();
 	else
@@ -48,7 +49,6 @@ TreeController.prototype.makeActive = function() {
 }
 
 TreeController.prototype.getTreeData = function(subject) {
-	console.log("Retrieving data for " + subject);
 	if (subject) {
 		this.subject = subject;
 		var file = String.interpolate("%@%@.notes/%@.tree", Constants.PATH, subject, subject); 
@@ -107,6 +107,7 @@ TreeController.prototype.renderView = function() {
 		}.bind(this), 500);	
 	}
 
+	// Render footer
 	var footerTemplate = Handlebars.templates.footer;
 	var footerData = {
 		mode: Constants.Mode.TREE.toString(),
@@ -194,7 +195,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 					this.setCurrentNodeFromDataStructureSelect(this.currentNode.parent);
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
-				// Insert node
+				this.app.changeMode(Constants.Mode.INDEX, null);
 				break;
 			case Constants.KeyEvent.DOM_VK_J:
 				// Move down node		
@@ -290,7 +291,6 @@ TreeController.prototype.handleKeyPress = function(e) {
 				catch (error) { 
 					console.log(error);
 				}
-				this.state = State.NORMAL;
 				break;
 			default:
 		}
@@ -397,6 +397,23 @@ TreeController.prototype.handleKeyPress = function(e) {
 				this.setCurrentNodeFromQuickLinkSelect(quicklink);
 				this.state = State.NORMAL;
 			}
+		}
+	}
+	else if (this.state === State.SEARCH_RESULTS) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				this.state = State.NORMAL;	
+				$(".searchresults").remove();		
+				break;
+			case Constants.KeyEvent.DOM_VK_J:
+				this.app.moveDownSearchResult();			
+				break;
+			case Constants.KeyEvent.DOM_VK_K:
+				this.app.moveUpSearchResult();		
+				break;
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				this.app.openMatch();
+				break;
 		}
 	}
 }
@@ -619,6 +636,7 @@ TreeController.prototype.setCurrentOrphanFromAnchorSelect = function(anchor) {
 }
 
 TreeController.prototype.processCommandPrompt = function() {
+	$(".file").text("");
 	// options 'w' write, 'x' write and close
 	var commandArray = $("#command-prompt").val().split(" ");
 	var option = commandArray[0].toLowerCase();
@@ -644,7 +662,7 @@ TreeController.prototype.processCommandPrompt = function() {
 						writeToFile(filePath, this.chart.nodes());
 					}
 				}.bind(this, directoryPath, argument));
-
+			
 				this.subject = argument;			
 			}
 			else if (this.subject) {
@@ -652,10 +670,9 @@ TreeController.prototype.processCommandPrompt = function() {
 				writeToFile(filePath, this.chart.nodes());
 			}
 			else {
-				// this.subject AND argument are null
-				//
-				// show warning
+				$(".file").text("NO SUBJECT GIVEN");	
 			}
+			this.state = State.NORMAL;
 			break;
 		case "f":
 			this.app.globalFind(argument);
