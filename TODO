@@ -1,5 +1,10 @@
 **************************************** FEATURES TO ADD **************************************** 
 
+		refactor how/where files stored
+			- object files should be stored in the objects directory
+			- process files should be stored in the process directory
+			- any app data such as images/video should be stored in the data directory
+
 		add index view
 			- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
 				like content in an object view 
@@ -7,6 +12,16 @@
 		add global object file search with '<cTRL>p'
 			- Add ability to search multiple words i.e  "Cheat Sheet"
 			- Fix problem of highlighting multi word queries
+
+		add ability to augment content with tags that can be used with searching
+			- add tags to images
+			- add tags to equations
+			- add tags to text
+			- add tags to video
+
+		add more complex and powerful searching with elasticsearch	
+			- scrub out html markup but maintain attributes like data-tags="tag1 tag2 ... tagN"
+			- https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-htmlstrip-charfilter.html
 
 		add ability to move tree-nodes (and their children) to new locations without having to make them orphans
 
@@ -54,6 +69,9 @@
 
 
 ******************************************  FIXES  ***************************************** 
+
+		- adding a new node "communication" to the the ElasticSearch tree results in the "nodes & clusters" object to be
+			duplicated into "communication" with the default new object template appended to the bottom.
 
 		- collapsing the title screws up the page's contents
 		- on object page "mary" 

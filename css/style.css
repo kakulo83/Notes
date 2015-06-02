@@ -151,24 +151,24 @@ p#menu-prompt-hint {
 
 /**************** index *********************/
 .object.indent-0 {
-color: purple;
-font-size: 20px;
-padding-left: 10px;
+	color: purple;
+	font-size: 20px;
+	padding-left: 10px;
 }
 .object.indent-1 {
-color: red;
-font-size: 16px;
-padding-left: 20px;
+	color: red;
+	font-size: 16px;
+	padding-left: 20px;
 }
 .object.indent-2 { 
-font-size: 12px;
-padding-left: 30px;
+	font-size: 12px;
+	padding-left: 30px;
 }
 .object.indent-3 { 
-padding-left: 40px;
+	padding-left: 40px;
 }
 .object.indent-4 { 
-padding-left: 50px;
+	padding-left: 50px;
 }
 /**************** tree *********************/
 #orphans-container {
@@ -185,7 +185,7 @@ ul#orphans {
   list-style-type: none;
 }
 ul#orphans li.orphan {
-margin-bottom: 10px;
+	margin-bottom: 10px;
 }
 ul#orphans li.orphan a.quicklink.orphan  {
 	position: absolute;
@@ -555,7 +555,4 @@ a.quicklink.object {
 a.quicklink.hide {
 	display: none;
 }
-
-
-
 

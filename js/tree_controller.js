@@ -241,13 +241,11 @@ TreeController.prototype.handleKeyPress = function(e) {
 				// (Secondary) fold one level 
 				break;	
 			case Constants.KeyEvent.DOM_VK_O:
-				if (this.subject === "")
-					throw new Error("Subject not saved!");
 				var selection = this.currentNode; 
 				this.app.changeMode(Constants.Mode.OBJECT, selection);
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
-				var selection = { "subject": this.subject, "object": this.currentNode.name };
+				var selection = this.currentNode;
 				this.app.changeMode(Constants.Mode.PROCESS, selection);
 				break;
 			case Constants.KeyEvent.DOM_VK_R:
@@ -658,16 +656,35 @@ TreeController.prototype.processCommandPrompt = function() {
 					else {
 						var directoryPath = arguments[0];
 						fs.mkdirSync(directoryPath);
+						fs.mkdirSync(directoryPath + "/data/");
 						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", argument, argument);
 						writeToFile(filePath, this.chart.nodes());
 					}
 				}.bind(this, directoryPath, argument));
-			
-				this.subject = argument;			
+				this.subject = argument;
 			}
 			else if (this.subject) {
-				var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", this.subject, this.subject);
-				writeToFile(filePath, this.chart.nodes());
+				var directoryPath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/", this.subject);
+
+				// check if the directory exists			
+				fs.realpath(directoryPath, function(directoryPath, subject, err, resolvedPath) {
+					if (!err) {
+						// directory exists; write to it
+						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subject, subject);
+						writeToFile(filePath, this.chart.nodes());
+					}
+					else {
+						// directory nonexistant;  create it first then write to it
+						var directoryPath = arguments[0];
+						var subject = arguments[1];
+						fs.mkdirSync(directoryPath);
+						fs.mkdirSync(directoryPath + "/objects/");
+						fs.mkdirSync(directoryPath + "/processes/");
+						fs.mkdirSync(directoryPath + "/data/");
+						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subject , subject);
+						writeToFile(filePath, this.chart.nodes());
+					}
+				}.bind(this, directoryPath, this.subject));
 			}
 			else {
 				$(".file").text("NO SUBJECT GIVEN");	

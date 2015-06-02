@@ -40,9 +40,6 @@ var ObjectController = function(app) {
 	this.currentContent = null;
 	this.linkableObjects = [];
 	this.keyStrokeStack = [];
-
-	
-
 };
 
 ObjectController.prototype.makeActive = function(selection) {
@@ -58,6 +55,9 @@ ObjectController.prototype.getObjectData = function() {
 }
 
 ObjectController.prototype.renderData = function(error, object) {
+
+	// TODO if a new Object is being shown, make sure to wipe clean the UI for the new object
+
 	var modeTemplate = Handlebars.templates.object;
 	$("#mode-container").html(modeTemplate());
 
@@ -368,11 +368,10 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// Determine which action has been selected and execute it
 				var activeMenuItem = $(".local-menu-item.active");
+				this.processVisualSelection(activeMenuItem);	
 				hideLocalMenu(this.currentContent);			
 				$(this.currentContent).find(".editable").removeClass("highlighted");
 				this.state = State.NORMAL;	
-				break;
-
 				break;
 		}
 	}
@@ -616,7 +615,7 @@ ObjectController.prototype.processCommandPrompt = function() {
 ObjectController.prototype.showVisualSelectMenu = function() {
 	var localMenuDiv = window.document.createElement("DIV");
 	localMenuDiv.className = "local-menu-container";
-	var localMenu = window.Handlebars.helpers.localMenu(["visual menu item1", "change me in showVisualSelectionMenu function"], "");
+	var localMenu = window.Handlebars.helpers.localMenu(["Increase font", "Decrease font", "Make Bold", "Make Normal", "change me in showVisualSelectionMenu function"], "");
 	$(localMenuDiv).append(localMenu);
 	$(this.currentContent).prepend(localMenuDiv);
 }
@@ -1007,6 +1006,31 @@ ObjectController.prototype.renderAllMath = function() {
 	this.app.renderMath();
 }
 
+ObjectController.prototype.processVisualSelection = function(selection) {
+	// triage based on which selection
+	var id = $(".local-menu-item.active").data("id");
+	var text = $(".active .editable");
+
+	switch(id) {
+		case "increase_font":
+			var newSize = parseInt($(text).css("font-size").replace("px","")) + 10;
+			$(text).css("font-size", newSize.toString() + "px");
+			break;
+		case "decrease_font":
+			var newSize = parseInt($(text).css("font-size").replace("px","")) - 10;
+			$(text).css("font-size", newSize.toString() + "px");
+			break;
+		case "make_bold":
+			$(text).css("font-weight", "bold");		
+			break;
+		case "make_normal":
+			$(text).css("font-size", "inherit");
+			$(text).css("font-weight", "normal");
+			break;
+	}	
+	
+}
+
 function nextMenuItem() {
 	var activeMenuItem = $(".local-menu-item.active");
 	var allLocalMenuItems = $(".local-menu-item").toArray();
@@ -1145,10 +1169,11 @@ function removeYellowSelector() {
 window.Handlebars.registerHelper("localMenu", function(items, className) {
 	var menu = "<ul class='local-menu'>";
 	for (var i=0; i<items.length; i++) {
-		if (i === 0)
-			menu = menu + String.interpolate("<li class='local-menu-item %@ active'>", className) + items[i] + "</li>";
+		var id = items[i].toLowerCase().replace(/\s+/, "_");	
+		if (i === 0) 
+			menu = menu + String.interpolate("<li class='local-menu-item %@ active' data-id='%@'>", className, id) + items[i] + "</li>";
 		else 
-			menu = menu + String.interpolate("<li class='local-menu-item %@'>", className) + items[i] + "</li>";
+			menu = menu + String.interpolate("<li class='local-menu-item %@' data-id='%@'>", className, id) + items[i] + "</li>";
 	}
 	return menu = menu + "</ul>";
 });

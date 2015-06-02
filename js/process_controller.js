@@ -12,13 +12,17 @@ var ProcessController = function(app, window) {
 };
 
 ProcessController.prototype.makeActive = function(selection) {
+	this.process = Constants.PATH + this.app.getSubject() + ".notes/processes/" + selection.name + ".process";
 	this.state = State.NORMAL;
-
-	this.renderView();
+	this.getProcess();
 }
 
+ProcessController.prototype.getProcess = function() {
+	d3.html(this.process, this.renderView.bind(this));		
+}
 
-ProcessController.prototype.renderView = function() {
+ProcessController.prototype.renderView = function(error, process) {
+
 	// Generate Mode Template
 	var modeTemplate = Handlebars.templates.process;
 	var mainData = {
