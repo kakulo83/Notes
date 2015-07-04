@@ -1,0 +1,33 @@
+/**************** tree *********************/
+#orphans-container {
+  position: fixed;
+  width: 200px;
+  right: 0;
+  top: 25%;
+}
+#orphans-container h3 {
+  text-align: center;
+}
+ul#orphans {
+	padding-top: 10px;
+  list-style-type: none;
+}
+ul#orphans li.orphan {
+	margin-bottom: 10px;
+}
+ul#orphans li.orphan a.quicklink.orphan  {
+	position: absolute;
+}
+ul#orphans li.orphan .circle {
+	width: 8px;
+  height: 8px;
+  background: white;
+  -moz-border-radius: 50px;
+  -webkit-border-radius: 50px;
+  border-radius: 50px;
+  display: inline-block;
+  margin-right: 20px;
+}
+ul#orphans li.orphan .circle.current {
+  background: red;
+}

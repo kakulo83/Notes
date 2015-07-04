@@ -1,0 +1,21 @@
+/**************** index *********************/
+.object.indent-0 {
+	color: purple;
+	font-size: 20px;
+	padding-left: 10px;
+}
+.object.indent-1 {
+	color: red;
+	font-size: 16px;
+	padding-left: 20px;
+}
+.object.indent-2 { 
+	font-size: 12px;
+	padding-left: 30px;
+}
+.object.indent-3 { 
+	padding-left: 40px;
+}
+.object.indent-4 { 
+	padding-left: 50px;
+}

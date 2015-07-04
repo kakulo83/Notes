@@ -1,11 +1,12 @@
-var fs = require("fs"); 
-var Constants  = require("./constants.js");
+var fs        = require("fs"); 
+var Constants = require("./constants.js");
 var Utilities = require("./utilities.js");
-var exec = require('child_process').exec;
+var UI        = require("./ui_constants.js");
+var exec      = require('child_process').exec;
 
 var State = {
 	NORMAL: 0,
-	MAIN_MENU: 1,
+	FOOTER_MENU: 1,
 	IMAGE: 2,
 	VIDEO: 3,
 	VIM: 4,
@@ -23,70 +24,63 @@ var Menu = {
 	NORMAL: 0,
 	VISUAL_SELECT: 1,
 	WORD: 2
-}
-
-var ObjectController = function(app) {
-	this.app = app;
-	$ = window.$;
-	Handlebars = window.Handlebars;
-	d3 = window.d3;
-	_ = window._;
-	CodeMirror = window.CodeMirror;
-	MathJax = window.MathJax;
-
-	this.unsavedData = false;
-	this.contents = []; 
-	this.file = "";
-	this.currentContent = null;
-	this.linkableObjects = [];
-	this.keyStrokeStack = [];
 };
 
-ObjectController.prototype.makeActive = function(selection) {
+var ObjectController = {
+	init: function(app, window) {
+		this.app = app;
+		$ = window.$;
+		Handlebars = window.Handlebars;
+		d3 = window.d3;
+		_ = window._;
+		CodeMirror = window.CodeMirror;
+		MathJax = window.MathJax;
+
+		this.unsavedData = false;
+		this.contents = []; 
+		this.file = "";
+		this.currentContent = null;
+		this.linkableObjects = [];
+		this.keyStrokeStack = [];
+	}
+}
+
+ObjectController.makeActive = function(selection) {
 	// subject is the subject matter, object is the specific topic
 	this.state = State.NORMAL;
+	this.file = selection.file;
 	this.object = selection;
 	this.unsavedData = false;
-	this.getObjectData();
+	this.getData();
 }
 
-ObjectController.prototype.getObjectData = function() {
-	d3.html(this.object.file, this.renderData.bind(this));
+ObjectController.getData = function() {
+	d3.html(this.file, this.renderData.bind(this));
 }
 
-ObjectController.prototype.renderData = function(error, object) {
-
-	// TODO if a new Object is being shown, make sure to wipe clean the UI for the new object
-
+ObjectController.renderData = function(error, object) {
 	var modeTemplate = Handlebars.templates.object;
-	$("#mode-container").html(modeTemplate());
+	$(UI.MODE_CONTAINER).html(modeTemplate());
 
 	// Init mutation observer that will watch for content changes
 	var targetNodes = $("#object-container, .text_content, .image_content");
 	var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
-	var DOMObserver = new MutationObserver (this.onContentModified.bind(this));
+	var DOMObserver = new MutationObserver (this.onObjectModified.bind(this));
 	var obsConfig = { childList: false, characterData: true, attributes: false, subtree: false };
-
 	targetNodes.each(function () {
 		DOMObserver.observe(this, obsConfig);
 	});
 
 	// Init drag-and-drop 
-
 	window.ondragover = function(e) { e.preventDefault(); return false };
 	window.ondrop = this.onDrop.bind(this); 
-
 	var droppableDiv = $("#object-container")[0];
-	
 	droppableDiv.ondragover = function () { this.className = 'hover'; return false; };
 	droppableDiv.ondragleave = function () { this.className = ''; return false; };
 	droppableDiv.ondrop = function (e) {
-		debugger
 		e.preventDefault();
-
 		return false;
 	};
-
 
 	if (object) {
 		this.contents = $(object).children(".content");
@@ -108,6 +102,7 @@ ObjectController.prototype.renderData = function(error, object) {
 		$(new_text).append("<p class='editable'>Add text</p>");
 		$("#object-container").append(new_text);			
 
+		this.contents = [];
 		this.contents.push(titleDiv);
 		this.contents.push(new_text);
 		this.setCurrentContent(new_text);
@@ -124,7 +119,7 @@ ObjectController.prototype.renderData = function(error, object) {
 	this.renderAllMath();
 }
 
-ObjectController.prototype.onDrop = function(e) {
+ObjectController.onDrop = function(e) {
 	e.preventDefault();
 	var file = e.dataTransfer.files[0];
 
@@ -135,11 +130,11 @@ ObjectController.prototype.onDrop = function(e) {
 	
 	exec(mvFileCommand, function (destination, error, stdout, stderr) {
     if (error !== null) { console.log('exec error: ' + error); }
-		this.appendImageContent(destination);
+		this.appendImageObject(destination);
 	}.bind(this, destination));
 }
 
-ObjectController.prototype.onContentModified = function(mutationRecords) {
+ObjectController.onObjectModified = function(mutationRecords) {
 	mutationRecords.forEach ( function (mutation) {
 		if (mutation.type == "childList") {
 			this.unsavedData = true;
@@ -147,13 +142,13 @@ ObjectController.prototype.onContentModified = function(mutationRecords) {
 	}.bind(this));
 }
 
-ObjectController.prototype.setCurrentContent = function(content) {
+ObjectController.setCurrentContent = function(content) {
 	$(this.currentContent).removeClass("active");
 	this.currentContent = content;
 	$(content).addClass("active");
 }
 
-ObjectController.prototype.handleKeyPress = function(e) {
+ObjectController.handleKeyPress = function(e) {
 	var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
 	if (this.state === State.NORMAL) {
 		switch(charCode) {
@@ -193,11 +188,14 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				}
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
-				this.state = State.MAIN_MENU;
-				showMenu();	
+				this.state = State.FOOTER_MENU;
+				this.showFooterMenu();
+				break;
+			case Constants.KeyEvent.DOM_VK_O:
+				this.showObject();									
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
-				this.app.changeMode(Constants.Mode.PROCESS);
+				this.showProcess();
 				break;
 			case Constants.KeyEvent.DOM_VK_R:
 				// Unfold one level
@@ -231,7 +229,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				}
 				break;	
 			case Constants.KeyEvent.DOM_VK_E:	
-				// return if content is NOT of type textContent
+				// return if content is NOT of type textObject
 				if ( ! /text_content/.test(this.currentContent.className) )
 					return;
 				// check if there already exists a highlighted word
@@ -259,13 +257,13 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_PERIOD:
 				if (! e.shiftKey)
 					return;
-				increaseFoldDpeth(this.currentContent);
+				this.increaseFoldDpeth(this.currentContent);
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_COMMA:
 				if (! e.shiftKey)
 					return;
-				decreaseFoldDepth(this.currentContent);
+				this.decreaseFoldDepth(this.currentContent);
 				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_COLON:
@@ -290,29 +288,21 @@ ObjectController.prototype.handleKeyPress = function(e) {
 			default:
 		}
 	}
-	else if (this.state === State.MAIN_MENU) {
+	else if (this.state === State.FOOTER_MENU) {
 		//var vimWindow = window.open("vim.html", "_blank", 'screenX=0,screenY=0,width=800,height=600'); 
 		//this.state = State.VIM;
 		//this.openVI();					
 
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_A:
-				this.appendTextContent();
+				this.appendTextObject();
 				hideMenu();
 				break;
 			case Constants.KeyEvent.DOM_VK_D:
-				hideMenu();	
-				var confirm = window.prompt("To delete this content, type 'yes'", "");
-				if (confirm.toLowerCase() === "yes") {
-					$(this.currentContent).remove();
-					var index = $.inArray(this.currentContent, this.contents);		
-					this.contents.splice(index, 1);
-					this.setCurrentContent(this.contents[0]);
-					this.state = State.NORMAL;
-				}	
+				this.deleteContent();
 				break;
 			case Constants.KeyEvent.DOM_VK_E:
-				this.editTextContent();
+				this.editTextObject();
 				hideMenu();	
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
@@ -323,7 +313,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
 				hideMenu();
-				this.appendMathContent();
+				this.appendMathObject();
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// process input from command prompt
@@ -345,7 +335,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				var uri = $("#command-prompt").val();
-				this.appendImageContent(uri);
+				this.appendImageObject(uri);
 				break;
 		}
 	}
@@ -459,11 +449,11 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				// content at a lower depth number is encountered
 				var start = $.inArray(this.currentContent, this.contents) + 1;
 				for (var i = start; i < this.contents.length; i++) {
-					var nextContent = this.contents[i];
-					var nextDepth = Number.parseInt(nextContent.dataset.depth);
+					var nextObject = this.contents[i];
+					var nextDepth = Number.parseInt(nextObject.dataset.depth);
 					if (nextDepth < currentDepth)
 						break;	
-					$(nextContent).hide();
+					$(nextObject).hide();
 				}
 				this.state = State.NORMAL;
 				break;
@@ -482,7 +472,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				this.state = State.NORMAL;
 			case Constants.KeyEvent.DOM_VK_M:
 				if (e.shiftKey) {
-					this.foldAllContent();
+					this.foldAllObject();
 				}
 				else {
 
@@ -491,7 +481,7 @@ ObjectController.prototype.handleKeyPress = function(e) {
 				break;			
 			case Constants.KeyEvent.DOM_VK_R:
 				if (e.shiftKey) {
-					this.unfoldAllContent();
+					this.unfoldAllObject();
 				}
 				else {
 
@@ -589,10 +579,11 @@ ObjectController.prototype.handleKeyPress = function(e) {
 	}
 }
 
-ObjectController.prototype.processCommandPrompt = function() {
+ObjectController.processCommandPrompt = function() {
 	var commandArray = $("#command-prompt").val().split(" ");
 	var option = commandArray[0].toLowerCase();
 	var argument = commandArray[1] || "";
+
 	switch(option) {
 		case "w":
 			this.save();
@@ -612,15 +603,53 @@ ObjectController.prototype.processCommandPrompt = function() {
 	}
 }
 
-ObjectController.prototype.showVisualSelectMenu = function() {
+ObjectController.showObject = function() { }
+
+ObjectController.showProcess = function() {
+	var fileComponents = this.file.split(/\//);
+
+	var dirIndex = _.indexOf(fileComponents, "objects");
+	fileComponents[dirIndex] = "processes";
+
+	var processName = _.last(fileComponents).split(".")[0] + ".process";
+	fileComponents[fileComponents.length - 1] = processName;
+
+	var processFile = fileComponents.join("/");
+
+	var selection = { "name": this.object.name, "file": processFile };
+	this.app.changeMode(Constants.Mode.PROCESS, selection);
+}
+
+ObjectController.showFooterMenu = function() {
+	var footerTemplate = Handlebars.templates.footer;
+	var footerData;
+
+	if ($(".content").length > 0) {	
+		footerData = {
+			mode: Constants.Mode.OBJECT.toString(),
+			options: ["(e)dit", "(a)ppend text", "(i)nsert image", "(m)athematics", "(d)elete" ] 
+		};
+	} else {
+		footerData = {
+			node: Constants.Mode.OBJECT.toString(),
+			options: ["(i)nsert text", "(a)ppend image"]
+		};	
+	}
+
+	$("footer").html(footerTemplate(footerData));
+	$("#mode-menu-container").show();
+	$("#mode-menu").css("visibility", "visible");
+}
+
+ObjectController.showVisualSelectMenu = function() {
 	var localMenuDiv = window.document.createElement("DIV");
 	localMenuDiv.className = "local-menu-container";
-	var localMenu = window.Handlebars.helpers.localMenu(["Increase font", "Decrease font", "Make Bold", "Make Normal", "change me in showVisualSelectionMenu function"], "");
+	var localMenu = window.Handlebars.helpers.localMenu(["Increase font", "Decrease font", "Make Bold", "Undo", "change me in showVisualSelectionMenu function"], "");
 	$(localMenuDiv).append(localMenu);
 	$(this.currentContent).prepend(localMenuDiv);
 }
 
-ObjectController.prototype.showCurrentWordMenu = function() {
+ObjectController.showCurrentWordMenu = function() {
 	var currentWord = $(".currentWord")[0];
 	var localMenuDiv = window.document.createElement("DIV");
 	localMenuDiv.className = "local-menu-container link-targets";
@@ -629,12 +658,12 @@ ObjectController.prototype.showCurrentWordMenu = function() {
 	$(currentWord).append(localMenuDiv);
 }
 
-ObjectController.prototype.openVI = function() {
+ObjectController.openVI = function() {
 	this.state = State.VIM;
 
 	/* CODE MIRROR & VIM binding */ 
 	// codemirror.js :  Line 5802 is the "save" function
-	// vim_keymappings.js:  Line 4468 is the "write" function fo vim
+	// vim_keymappings.js:  Line 4474 is the "write" function fo vim
 	
 	// Grab editable html, replace with a temporary textarea
 	var editable = $(this.currentContent).find(".editable")[0];
@@ -661,12 +690,14 @@ ObjectController.prototype.openVI = function() {
 		});
 
 		CodeMirror.on(this.vim, 'vim-saving-done', this.closeVI.bind(this));
+		CodeMirror.on(this.vim, 'vim-quitting-done', this.closeVI.bind(this));
 	}
 	else {
 		var tempTextArea = window.document.createElement("TEXTAREA");
 		tempTextArea.className = editable.className; 
 
 		var links = $(editable).find(".object-link");
+		var style = $(".active .editable").attr("style");
 
 		tempTextArea.innerHTML = editable.textContent;
 		$(editable).replaceWith(tempTextArea);
@@ -680,13 +711,14 @@ ObjectController.prototype.openVI = function() {
 		});
 
 		// Save any links onto the this.vim object for re-insertion upon closeVI()
-		this.vim["links"] = links;					
+		this.vim["links"] = links;
+		this.vim["style"] = style;
 
 		CodeMirror.on(this.vim, 'vim-saving-done', this.closeVI.bind(this));
 	}
 }
 
-ObjectController.prototype.closeVI = function(e) {
+ObjectController.closeVI = function(e) {
 	// get new text
 	var newText = this.vim.getValue();
 
@@ -703,17 +735,17 @@ ObjectController.prototype.closeVI = function(e) {
 	// Break text into word components for non math content
 
 	if ( /math/.test(this.vim.getTextArea().className) ) {
-		var updatedContent = window.document.createElement("P");	
+		var updatedObject = window.document.createElement("P");	
 		var classNames = this.vim.getTextArea().className;
-		updatedContent.className = classNames;
-		$(updatedContent).append(newText);
-		$(this.currentContent).html(updatedContent);
+		updatedObject.className = classNames;
+		$(updatedObject).append(newText);
+		$(this.currentContent).html(updatedObject);
 		try {
-			this.app.renderMath(updatedContent);
+			this.app.renderMath(updatedObject);
 		}
 		catch (error) {
-			$(updatedContent).append(newText);
-			$(this.currentContent).html(updatedContent);
+			$(updatedObject).append(newText);
+			$(this.currentContent).html(updatedObject);
 		}
 	}
 	else {
@@ -730,11 +762,13 @@ ObjectController.prototype.closeVI = function(e) {
 														},this);
 
 		// Create new paragraph tag with span wrapped words
-		var updatedContent = window.document.createElement("PRE");
+		var updatedObject = window.document.createElement("PRE");
 		var classNames = this.vim.getTextArea().className;
-		updatedContent.className = classNames;
-		$(updatedContent).append(spanWrappedWords);
-		$(this.currentContent).html(updatedContent);
+		updatedObject.className = classNames;
+		$(updatedObject).append(spanWrappedWords);
+		$(this.currentContent).html(updatedObject);
+
+		$(".active .editable").attr("style", this.vim.style);
 
 		// reinsert links if their words are still in the updated text content
 		var links = this.vim.links;
@@ -746,82 +780,97 @@ ObjectController.prototype.closeVI = function(e) {
 	
 	// remove vim editor
 	this.vim = null;
+	
+	// save changes
+	this.save();
 	this.state = State.NORMAL;
 }
 
-ObjectController.prototype.editTextContent = function() {
+ObjectController.editTextObject = function() {
 	// using codemirror
 	this.openVI();
 }
 
-ObjectController.prototype.appendTextContent = function() {
-	var newContentDiv = window.document.createElement("DIV");
-	newContentDiv.className = "text_content content";
-	newContentDiv.setAttribute("data-depth", 0);
+ObjectController.appendTextObject = function() {
+	var newObjectDiv = window.document.createElement("DIV");
+	newObjectDiv.className = "text_content content";
+	newObjectDiv.setAttribute("data-depth", 0);
 
-	var newContentParagraph = window.document.createElement("P");	
-	newContentParagraph.className = "editable";
-	newContentParagraph.innerHTML = "Add text here";
-	newContentDiv.appendChild(newContentParagraph);
-	
-	$(this.currentContent).after(newContentDiv);
+	var newObjectParagraph = window.document.createElement("P");	
+	newObjectParagraph.className = "editable";
+	newObjectParagraph.innerHTML = "";
+	newObjectDiv.appendChild(newObjectParagraph);
+
+	$(this.currentContent).after(newObjectDiv);
 
 	// GET INDEX OF CURRENTCONTENT (we might be appending content in the middle of the page) SPLICE NEW CONTENT
 	var indexCurrent = $.inArray(this.currentContent, this.contents);
 	if (indexCurrent < this.contents.length - 1)
-		this.contents.splice(indexCurrent+1, 0, newContentDiv);	
+		this.contents.splice(indexCurrent+1, 0, newObjectDiv);	
 	else 
-		this.contents.push(newContentDiv);
+		this.contents.push(newObjectDiv);
 
-	this.setCurrentContent(newContentDiv);
+	this.setCurrentContent(newObjectDiv);
 
 	// Open vi
 	this.openVI();
 }
 
-ObjectController.prototype.appendImageContent = function(uri) {
+ObjectController.appendImageObject = function(uri) {
 	hideCommandPrompt();	
-	var newContentDiv = window.document.createElement("DIV");
-	newContentDiv.className = "image_content content";	
-	newContentDiv.setAttribute("data-depth", 0);
+	var newObjectDiv = window.document.createElement("DIV");
+	newObjectDiv.className = "image_content content";	
+	newObjectDiv.setAttribute("data-depth", 0);
 
 	var image = window.document.createElement("IMG");
 	image.src = uri;
 
-	newContentDiv.appendChild(image);		
+	newObjectDiv.appendChild(image);		
 
 
-	$(this.currentContent).after(newContentDiv);
-	this.contents.push(newContentDiv);
-	this.setCurrentContent(newContentDiv);
+	$(this.currentContent).after(newObjectDiv);
+	this.contents.push(newObjectDiv);
+	this.setCurrentContent(newObjectDiv);
 	this.state = State.NORMAL;
 }
 
-ObjectController.prototype.appendMathContent = function() {
-	var newContentDiv = window.document.createElement("DIV");
-	newContentDiv.className = "text_content content";
+ObjectController.appendMathObject = function() {
+	var newObjectDiv = window.document.createElement("DIV");
+	newObjectDiv.className = "text_content content";
 	
-	var newContentParagraph = window.document.createElement("P");
-	newContentParagraph.className = "editable math";
-	newContentParagraph.innerHTML = "Add TEX here";
-	newContentDiv.appendChild(newContentParagraph);
+	var newObjectParagraph = window.document.createElement("P");
+	newObjectParagraph.className = "editable math";
+	newObjectParagraph.innerHTML = "Add TEX here";
+	newObjectDiv.appendChild(newObjectParagraph);
 
-	$(this.currentContent).after(newContentDiv);
+	$(this.currentContent).after(newObjectDiv);
 
 	// GET INDEX OF CURRENTCONTENT (we might be appending content in the middle of the page) SPLICE NEW CONTENT
 	var indexCurrent = $.inArray(this.currentContent, this.contents);
 	if (indexCurrent < this.contents.length - 1)
-		this.contents.splice(indexCurrent+1, 0, newContentDiv);	
+		this.contents.splice(indexCurrent+1, 0, newObjectDiv);	
 	else 
-		this.contents.push(newContentDiv);
+		this.contents.push(newObjectDiv);
 
-	this.setCurrentContent(newContentDiv);
+	this.setCurrentContent(newObjectDiv);
 
 	// Open vi
 	this.openVI();
 }
 
-ObjectController.prototype.openSearchMatch = function() {
+ObjectController.deleteContent = function() {
+	hideMenu();
+	var confirm = window.prompt("To delete this content, type 'yes'", "");
+	if (confirm.toLowerCase() === "yes") {
+		$(this.currentContent).remove();
+		var index = $.inArray(this.currentContent, this.contents);
+		this.contents.splice(index, 1);
+		this.setCurrentContent(this.contents[0]);
+		this.state = State.NORMAL;
+	}
+}
+
+ObjectController.openSearchMatch = function() {
 	var filepath = $(".search-match.active .filepath").text();
 	var fileExtension = /[^.]+$/.exec(filepath)[0];
 	var fileName = filepath.replace(/^.*[\\\/]/, '');
@@ -837,19 +886,19 @@ ObjectController.prototype.openSearchMatch = function() {
 	}
 }
 
-ObjectController.prototype.moveDownContent = function() {
+ObjectController.moveDownContent = function() {
 	var index = $.inArray(this.currentContent, this.contents) + 1;
-	var nextContent = this.contents[index];
+	var nextObject = this.contents[index];
 
 	// remove current word
 	$(".active .currentWord").removeClass("currentWord");
 
-	if (nextContent !== undefined) {
-		if ( $(nextContent).is(":visible") ) {
-			this.setCurrentContent(nextContent);
+	if (nextObject !== undefined) {
+		if ( $(nextObject).is(":visible") ) {
+			this.setCurrentContent(nextObject);
 			scrollDown(this.currentContent);	
 		} else {
-			// nextContent is NOT visible, therefore keep advancing until visible content is found	
+			// nextObject is NOT visible, therefore keep advancing until visible content is found	
 			index = index + 1;
 			for (var i = index; i < this.contents.length; i++) {
 				if ($(this.contents[i]).is(":visible") ) {
@@ -862,19 +911,19 @@ ObjectController.prototype.moveDownContent = function() {
 	}
 }
 
-ObjectController.prototype.moveUpContent = function() {
+ObjectController.moveUpContent = function() {
 	var index = $.inArray(this.currentContent, this.contents) - 1;
-	var previousContent = this.contents[index]; 
+	var previousObject = this.contents[index]; 
 
 	// remove current word
 	$(".active .currentWord").removeClass("currentWord");
 
-	if (previousContent !== undefined ) {
-		if ( $(previousContent).is(":visible") ) {
-			this.setCurrentContent(previousContent);
+	if (previousObject !== undefined ) {
+		if ( $(previousObject).is(":visible") ) {
+			this.setCurrentContent(previousObject);
 			scrollUp(this.currentContent);
 		} else {
-			// previousContent is NOT visible	
+			// previousObject is NOT visible	
 			index = index - 1;
 			for (var i = index; i >= 0; i--) {
 				if ($(this.contents[i]).is(":visible") ) {
@@ -887,36 +936,37 @@ ObjectController.prototype.moveUpContent = function() {
 	}
 }
 
-ObjectController.prototype.save = function() {
+ObjectController.save = function() {
 	var data = "";	
+	
 	_.each(this.contents, function(content) {
 		if ( $(content).find(".editable").hasClass("math") ) {
 			var TeX = "\\(" + $(content).find(".math script").html() + "\\)";
 			var editable = $(content).find(".editable").clone();
 			$(editable).html(TeX);
 
-			var preRenderedContent = $(content).clone();
-			$(preRenderedContent).find(".editable").replaceWith(editable);
-			data = data + preRenderedContent[0].outerHTML + "\n";	
+			var preRenderedObject = $(content).clone();
+			$(preRenderedObject).find(".editable").replaceWith(editable);
+			data = data + preRenderedObject[0].outerHTML + "\n";	
 		} else
 			data = data + content.outerHTML + "\n";	
 	},this);
 	data = data.replace(/active/, "");
 
-	fs.writeFile(this.object.file, data, function(err) {
+	fs.writeFile(this.file, data, function(err) {
 		if (err) throw err;
 		console.log('It\'s saved!');
 	});
 	this.unsavedData = false;
 }
 
-ObjectController.prototype.makeAnchor = function() {
+ObjectController.makeAnchor = function() {
 
 }
 
-ObjectController.prototype.showLinkOptions = function() {
+ObjectController.showLinkOptions = function() {
 	if (this.linkableObjects.length == 0)	{
-		var getLinkableObjectPromise = this.getLinkableObjects();	
+		var getLinkableObjectPromise = this.getLinkableObjects();
 		getLinkableObjectPromise.done(function(result) {
 			this.linkableObjects = result;
 			var currentWord = $(".currentWord")[0];
@@ -925,9 +975,9 @@ ObjectController.prototype.showLinkOptions = function() {
 			var localMenu = window.Handlebars.helpers.linkOptions(this.linkableObjects, "link-option");
 			$(localMenuDiv).append(localMenu);
 			$(currentWord).append(localMenuDiv);
-		}.bind(this));	
+		}.bind(this));
 	}
-	else {	
+	else {
 		var currentWord = $(".currentWord")[0];
 		var localMenuDiv = window.document.createElement("DIV");
 		localMenuDiv.className = "local-menu-container link-targets";
@@ -937,14 +987,14 @@ ObjectController.prototype.showLinkOptions = function() {
 	}
 }
 
-ObjectController.prototype.createLink = function(selectedOption) {
+ObjectController.createLink = function(selectedOption) {
 	var target = selectedOption[0].dataset.file;
 	var targetText = $("span.currentWord").html();
 	var link   = String.interpolate("<a href='%@' class='object-link'>%@</a>", target, targetText);
 	$("span.currentWord").html(link);
 }
 
-ObjectController.prototype.getLinkableObjects = function() {
+ObjectController.getLinkableObjects = function() {
 	var deferred = new $.Deferred();
 	var objectTreePath = String.interpolate("%@%@.notes/%@.tree", Constants.PATH, this.app.subject, this.app.subject);
 	d3.json(objectTreePath, function(error, nodes) {
@@ -956,18 +1006,18 @@ ObjectController.prototype.getLinkableObjects = function() {
 	return deferred.promise();
 }
 
-ObjectController.prototype.openLink = function(selectedObject) {
+ObjectController.openLink = function(selectedObject) {
 	this.keyStrokeStack = [];	
 	this.makeActive(selectedObject);
 }
 
-ObjectController.prototype.popLink = function() {
+ObjectController.popLink = function() {
 
 }
 
-ObjectController.prototype.foldAllContent = function() {
-	var depth1Content = $(".content[data-depth=1]").toArray();
-	_.each(depth1Content, function(content) {
+ObjectController.foldAllObject = function() {
+	var depth1Object = $(".content[data-depth=1]").toArray();
+	_.each(depth1Object, function(content) {
 		var currentDepth = 1;
 		$(content).children().hide();
 		$(content).prepend("<div class='folded-content'>+</div>");	
@@ -976,18 +1026,18 @@ ObjectController.prototype.foldAllContent = function() {
 		// content at a lower depth number is encountered
 		var start = $.inArray(content, this.contents) + 1;
 		for (var i = start; i < this.contents.length; i++) {
-			var nextContent = this.contents[i];
-			var nextDepth = Number.parseInt(nextContent.dataset.depth);
+			var nextObject = this.contents[i];
+			var nextDepth = Number.parseInt(nextObject.dataset.depth);
 			if (nextDepth < currentDepth)
 				break;	
-			$(nextContent).hide();
+			$(nextObject).hide();
 		}
 	},this);
 }
 
-ObjectController.prototype.unfoldAllContent = function() {
-	var depth1Content = $(".content[data-depth=1]").toArray();
-	_.each(depth1Content, function(content) {
+ObjectController.unfoldAllObject = function() {
+	var depth1Object = $(".content[data-depth=1]").toArray();
+	_.each(depth1Object, function(content) {
 		$(content).find(".folded-content").remove();
 		$(content).children().show();
 
@@ -1002,33 +1052,52 @@ ObjectController.prototype.unfoldAllContent = function() {
 	},this);
 }
 
-ObjectController.prototype.renderAllMath = function() {
+ObjectController.renderAllMath = function() {
 	this.app.renderMath();
 }
 
-ObjectController.prototype.processVisualSelection = function(selection) {
+ObjectController.processVisualSelection = function(selection) {
 	// triage based on which selection
 	var id = $(".local-menu-item.active").data("id");
-	var text = $(".active .editable");
+	var text = $(".content.active .editable");
 
 	switch(id) {
 		case "increase_font":
-			var newSize = parseInt($(text).css("font-size").replace("px","")) + 10;
+			var newSize = parseInt($(text).css("font-size").replace("px","")) + 5;
 			$(text).css("font-size", newSize.toString() + "px");
 			break;
 		case "decrease_font":
-			var newSize = parseInt($(text).css("font-size").replace("px","")) - 10;
+			var newSize = parseInt($(text).css("font-size").replace("px","")) - 5;
 			$(text).css("font-size", newSize.toString() + "px");
 			break;
 		case "make_bold":
 			$(text).css("font-weight", "bold");		
 			break;
-		case "make_normal":
+		case "undo":
 			$(text).css("font-size", "inherit");
 			$(text).css("font-weight", "normal");
 			break;
 	}	
-	
+}
+
+ObjectController.increaseFoldDpeth = function(currentContent) {
+	var depth = Number.parseInt(currentContent.getAttribute("data-depth"));
+	if (depth) {
+		if (depth + 1 < 7)
+			depth = depth + 1;	
+		currentContent.setAttribute("data-depth", depth);
+	} else {
+		currentContent.setAttribute("data-depth", 1);
+	}
+}
+
+ObjectController.decreaseFoldDepth = function(currentContent) {
+	var depth = Number.parseInt(currentContent.getAttribute("data-depth"));
+	if (depth) {
+		if (depth - 1 >= 0) 
+			depth = depth - 1;
+		currentContent.setAttribute("data-depth", depth);		
+	}
 }
 
 function nextMenuItem() {
@@ -1053,28 +1122,8 @@ function previousMenuItem() {
 	}
 }
 
-function increaseFoldDpeth(currentContent) {
-	var depth = Number.parseInt(currentContent.getAttribute("data-depth"));
-	if (depth) {
-		if (depth + 1 < 7)
-			depth = depth + 1;	
-		currentContent.setAttribute("data-depth", depth);
-	} else {
-		currentContent.setAttribute("data-depth", 1);
-	}
-}
-
-function decreaseFoldDepth(currentContent) {
-	var depth = Number.parseInt(currentContent.getAttribute("data-depth"));
-	if (depth) {
-		if (depth - 1 >= 0) 
-			depth = depth - 1;
-		currentContent.setAttribute("data-depth", depth);		
-	}
-}
-
-function scrollDown(nextContent) {
-	var boundingRect = nextContent.getBoundingClientRect();
+function scrollDown(nextObject) {
+	var boundingRect = nextObject.getBoundingClientRect();
 
   // (content is completely hidden)
 	if (boundingRect.top >= Constants.MODE_CONTAINER_HEIGHT) {
@@ -1089,8 +1138,8 @@ function scrollDown(nextContent) {
 	}
 }
 
-function scrollUp(previousContent) {
-	var boundingRect = previousContent.getBoundingClientRect();
+function scrollUp(previousObject) {
+	var boundingRect = previousObject.getBoundingClientRect();
 
 	// (content is completely hidden)
 	if (boundingRect.bottom <= 0) {
@@ -1124,26 +1173,6 @@ function showMenuPrompt(prompt) {
 	$("#menu-prompt").prop("disabled", false);
 	$("#menu-prompt").attr("placeholder", "");
 	$("#menu-prompt").focus();
-}
-
-function showMenu() {
-	var footerTemplate = Handlebars.templates.footer;
-	var footerData;
-	if ($(".content").length > 0) {	
-		footerData = {
-			mode: Constants.Mode.OBJECT.toString(),
-			options: ["(e)dit", "(a)ppend text", "(i)nsert image", "(m)athematics", "(d)elete" ]
-		};
-	} else {
-		footerData = {
-			node: Constants.Mode.OBJECT.toString(),
-			options: ["(i)nsert text", "(a)ppend image"]
-		};	
-	}
-
-	$("footer").html(footerTemplate(footerData));
-	$("#mode-menu-container").show();
-	$("#mode-menu").css("visibility", "visible");
 }
 
 function hideMenu() {

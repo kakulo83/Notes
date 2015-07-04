@@ -1,0 +1,94 @@
+/**************** process *******************/
+#process-container #title { 
+  font-size: 20px;
+  font-weight: bold;
+}
+#process-container .content, #process-container .process-title {
+	border-left: solid transparent;
+	padding-left: 80px;
+	padding-right: 80px;
+}
+.process {
+	padding-top: 15px;
+	padding-bottom: 15px;
+	background-color: indigo;
+	margin-bottom: 10px;
+}
+.process.active {
+	background-color: purple;
+}
+#process-container .text_content.active, #process-container .image_content.active, #process-container .video_content.active {
+	border-left: solid red;
+}
+
+#process-container div[data-depth="1"] { padding-left: 160px; }
+#process-container div[data-depth="2"] { padding-left: 240px; }
+#process-container div[data-depth="3"] { padding-left: 320px; }
+#process-container div[data-depth="4"] { padding-left: 400px; }
+#process-container div[data-depth="5"] { padding-left: 480px; }
+#process-container div[data-depth="6"] { padding-left: 560px; }
+
+#process-container .folded-content {
+	height: 5px;
+	margin-bottom: 15px;
+	border-bottom: dashed gray 2px;
+}
+#process-container a.link {
+	color: purple;
+}
+#process-container span.currentWord {
+	color: red;
+}
+
+#process-container textarea.editable {
+	line-height: 20px;
+	font-size: 14px;
+	width: 100%;
+	background-color: transparent;
+	border: none;
+	color: white;
+	resize: none;
+	outline: none;
+}
+#process-container .text_content.active, #process-container .image_content.active, #process-container .video_content.active {
+	border-left: solid red;
+}
+#process-container .image_content img {
+	background-color: white;
+}
+#process-container .highlighted {
+	color: black !important;
+	background-color: white !important;
+}
+#process-container img {
+	max-width: 1280px;
+}
+#process-container .local-menu-container {
+	background-color: gray;
+	position: absolute;
+	z-index: 1;
+}
+#process-container .local-menu {
+	list-style: none;
+	padding-left: 0;
+}
+#process-container .local-menu-item {
+	padding-left: 10px;
+	padding-right: 10px;
+	color: white;
+}
+#process-container .local-menu-item.active {
+	background-color: darkmagenta;
+}
+#process-container .link-targets {
+  display: inline-block;
+  position: absolute;
+}
+#process-container a.process-link {
+  color: blue;
+  text-decoration: none;
+}
+
+
+
+

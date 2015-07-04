@@ -205,10 +205,11 @@ TreeController.prototype.handleKeyPress = function(e) {
 					return;
 				var childPosition = $.inArray(this.currentNode, parent.children);
 				if (childPosition < parent.children.length - 1)
-					this.setCurrentNodeFromDataStructureSelect(parent.children[childPosition + 1]);			 
-
-				// TODO handle case where jumping from set of siblings to next set of siblings (cousins to the current set of siblings)
-
+					this.setCurrentNodeFromDataStructureSelect(parent.children[childPosition + 1]);
+				else {
+					var nextCousin = this.getNextCousinNode();
+					if (nextCousin) { this.setCurrentNodeFromDataStructureSelect(nextCousin); }
+				}
 				break;
 			case Constants.KeyEvent.DOM_VK_K:
 				// Move up node
@@ -218,7 +219,10 @@ TreeController.prototype.handleKeyPress = function(e) {
 					var childPosition = $.inArray(this.currentNode, parent.children);
 					if (childPosition > 0)
 						this.setCurrentNodeFromDataStructureSelect(parent.children[childPosition - 1]);
-					// TODO handle case where jumping from set of siblings to next set of siblings (cousins to the current set of siblings)
+					else {
+						var prevCousin = this.getPreviousCousinNode();
+						if (prevCousin) { this.setCurrentNodeFromDataStructureSelect(prevCousin); }
+					}
 				}
 				break;
 			case Constants.KeyEvent.DOM_VK_L:
@@ -245,7 +249,8 @@ TreeController.prototype.handleKeyPress = function(e) {
 				this.app.changeMode(Constants.Mode.OBJECT, selection);
 				break;
 			case Constants.KeyEvent.DOM_VK_P:
-				var selection = this.currentNode;
+				var processFile = Constants.PATH + this.app.getSubject() + ".notes/processes/" + this.currentNode.name + ".process";
+				var selection = { "name": this.currentNode.name, "file": processFile };
 				this.app.changeMode(Constants.Mode.PROCESS, selection);
 				break;
 			case Constants.KeyEvent.DOM_VK_R:
@@ -416,6 +421,50 @@ TreeController.prototype.handleKeyPress = function(e) {
 	}
 }
 
+TreeController.prototype.getNextCousinNode = function() {
+	var stack = [];
+	stack.push(this.chart.nodes());
+
+	while (stack.length > 0) {
+		var currentNode = stack.shift();
+
+		if (currentNode.depth === this.currentNode.depth) {
+			// find index of this.currentNode in the stack	
+			var index = stack.indexOf(this.currentNode);
+			if (index >= 0) 
+				return stack[index+1];	
+		}
+		if (currentNode.children) {
+			for (var i=0; i<currentNode.children.length; i++) {
+				stack.push(currentNode.children[i])
+			}
+		}
+	}
+	return null;
+}
+
+TreeController.prototype.getPreviousCousinNode = function() {
+	var stack = [];
+	stack.push(this.chart.nodes());
+
+	while (stack.length > 0) {
+		var currentNode = stack.shift();
+
+		if (currentNode.depth === this.currentNode.depth) {
+			// find index of this.currentNode in the stack	
+			var index = stack.indexOf(this.currentNode);
+			if (index >= 0)
+				return stack[index-1];	
+		}
+		if (currentNode.children) {
+			for (var i=0; i<currentNode.children.length; i++) {
+				stack.push(currentNode.children[i])
+			}
+		}
+	}
+	return null;
+}
+
 TreeController.prototype.addNewNode = function(name) {
 	if (name === "") {
 		this.state = State.NORMAL;
@@ -424,7 +473,7 @@ TreeController.prototype.addNewNode = function(name) {
 	this.state = State.NORMAL;
 
 	var id = d3.selectAll(".node")[0].length + 1;
-	var filePath = Constants.PATH + this.subject + ".notes/" + name + ".object";
+	var filePath = Constants.PATH + this.subject + ".notes/objects/" + name + ".object";
 	var newNode = { name: name, file: filePath, depth: this.currentNode.depth+1, parent: this.currentNode, children: [] };
 	// If current node has no array for it's children, give it one
 	if (!this.currentNode.children)
@@ -502,7 +551,7 @@ TreeController.prototype.detachNode = function() {
 TreeController.prototype.moveOrphan = function(parentNode) {
 	// create the new legitimate child
 	var name = $(".orphan.current .orphan-name").text();
-	var file = Constants.PATH + this.subject + ".notes/" + name + ".object";
+	var file = Constants.PATH + this.subject + ".notes/objects/" + name + ".object";
 	var newChild = { "name": name, "file": file, "parent": parentNode };
 
 	// add as new child to parent node

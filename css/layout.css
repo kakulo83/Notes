@@ -21,8 +21,6 @@ body {
 }
 #mode-container { /* should be equal to or greater than height of footer */
 	min-height: 100%;
-	height: auto;
-	margin: 0 auto -40px;
 	margin-bottom: 50px;
 	color: white;
 }
@@ -117,36 +115,6 @@ p#menu-prompt-hint {
 }
 #mode-menu-container {
 	display: none;
-}
-.searchresults {
-  position: fixed;
-	padding: 25px;
-  width: 45%;
-  height: 100%;
-	top: 0;
-	right: 0;
-  background: midnightblue;
-	overflow-y: scroll;
-	overflow-x: hidden;
-}
-.search-match.active {
-  background-color: rgba(165, 42, 42, 0.31);
-}
-.searchresults p.filepath {
-	color: yellow !important;
-}
-.search-match {
-	padding: 10px;
-}
-.search-match p, .search-match pre {
-	overflow-wrap: break-word;
-}
-.searchresults img {
-	max-width: 600px;
-	background-color: snow;
-}
-.query-match {
-	color: red;
 }
 
 /******************* D3 *******************/

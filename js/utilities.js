@@ -65,7 +65,7 @@ exports.flattenTree = function (node) {
 		if (currentNode.children) {
 			for(var i=0; i<currentNode.children.length; i++) {
 				stack.push(currentNode.children[i]);			
-			}	
+			}
 		}
 		var orphan = { };
 		orphan.name = currentNode.name;
@@ -114,4 +114,55 @@ exports.parseAckmateString = function(input) {
 	}
 	return output;
 }
+
+
+
+// What are the best practices for bundling together services
+//
+// Upon startup should my notes program check if there is an ElasticSearch instance running?
+// seems reasonable to do. 
+//
+// Should notes program check if an ElasticSearch mapping exists?  
+
+exports.parseObjectFile = function(html) {
+
+}
+
+exports.parseProcessFile = function(html) {
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -8,8 +8,8 @@ var Mode = {
 };
 
 var FileType = {
-	OBJECT: "object",
-	PROCESS: "process"
+	OBJECT: "object",	
+	PROCESS: "process"	
 }
 
 var KeyEvent = {

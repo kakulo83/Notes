@@ -1,0 +1,79 @@
+/**************** object *******************/
+#object-container h3#title { margin-top: 0; }
+#object-container .content, #object-container .content.depth-0 {
+	border-left: solid transparent;
+	padding-left: 80px;
+	padding-right: 80px;
+}
+#object-container .title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+#object-container div[data-depth="1"] { padding-left: 160px; }
+#object-container div[data-depth="2"] { padding-left: 240px; }
+#object-container div[data-depth="3"] { padding-left: 320px; }
+#object-container div[data-depth="4"] { padding-left: 400px; }
+#object-container div[data-depth="5"] { padding-left: 480px; }
+#object-container div[data-depth="6"] { padding-left: 560px; }
+
+#object-container .folded-content {
+	height: 5px;
+	margin-bottom: 15px;
+	border-bottom: dashed gray 2px;
+}
+#object-container a.link {
+	color: purple;
+}
+#object-container span.currentWord {
+	color: red;
+}
+
+#object-container textarea.editable {
+	line-height: 20px;
+	font-size: 14px;
+	width: 100%;
+	background-color: transparent;
+	border: none;
+	color: white;
+	resize: none;
+	outline: none;
+}
+#object-container .text_content.active, #object-container .image_content.active, #object-container .video_content.active {
+	border-left: solid red;
+}
+#object-container .image_content img {
+	background-color: white;
+}
+#object-container .highlighted {
+	color: black !important;
+	background-color: white !important;
+}
+#object-container img {
+	max-width: 1280px;
+}
+#object-container .local-menu-container {
+	background-color: gray;
+	position: absolute;
+	z-index: 1;
+}
+#object-container .local-menu {
+	list-style: none;
+	padding-left: 0;
+}
+#object-container .local-menu-item {
+	padding-left: 10px;
+	padding-right: 10px;
+	color: white;
+}
+#object-container .local-menu-item.active {
+	background-color: darkmagenta;
+}
+#object-container .link-targets {
+  display: inline-block;
+  position: absolute;
+}
+#object-container a.object-link {
+  color: blue;
+  text-decoration: none;
+}

@@ -2,21 +2,24 @@ var gui = require("nw.gui");
 var win = gui.Window.get();
 var nativeMenuBar = new gui.Menu({ type: "menubar" });
 
-var fs = require("fs");
-var util = require("util");
-var exec = require('child_process').exec;
+var fs             = require("fs");
+var util           = require("util");
+var exec           = require('child_process').exec;
+var elastic_search = require('child_process').exec;
 
-var Utilities = require("./js/utilities.js");
-var Constants = require("./js/constants.js");
-var IndexController = require("./js/index_controller.js");
-var TreeController = require("./js/tree_controller.js");
-var ObjectController = require("./js/object_controller.js");
+var Utilities         = require("./js/utilities.js");
+var Constants         = require("./js/constants.js");
+var UI                = require("./js/ui_constants.js");
+var IndexController   = require("./js/index_controller.js");
+var TreeController    = require("./js/tree_controller.js");
+var ObjectController  = require("./js/object_controller.js");
 var ProcessController = require("./js/process_controller.js");
 
 // check operating system for the menu
 if (process.platform === "darwin") {
     nativeMenuBar.createMacBuiltin("VIL Tool");
 }
+
 win.menu = nativeMenuBar;
 var app = null;
 
@@ -29,7 +32,7 @@ $(document).ready(function() {
 	window.CodeMirror = CodeMirror;
 	win.showDevTools();
 	var subject = gui.App.argv[0];
-	app = new App();	
+	app = new App();
 	app.init(subject);
 });
 
@@ -51,11 +54,17 @@ App.prototype.init = function(subject) {
 
 	this.index_controller   = new IndexController(this, subject, window);
 	this.tree_controller    = new TreeController(this, subject, window);
-	this.object_controller  = new ObjectController(this, window);
-	this.process_controller = new ProcessController(this, window);
+
+	this.object_controller = ObjectController;
+	this.object_controller.init(this, window);
+
+	this.process_controller = ProcessController;
+	this.process_controller.init(this, window);
 
 	document.addEventListener("keydown", this.handleKeyPress.bind(this), false);
 	this.changeMode(Constants.Mode.TREE);
+
+	//this.initElasticSearch();
 }
 
 App.prototype.changeMode = function(mode, selection) {
@@ -102,10 +111,10 @@ App.prototype.handleKeyPress = function(e) {
 }
 
 App.prototype.toggleMenu = function() {
-	if ($("#mode-menu-container").is(":visible")) 
-		$("#mode-menu-container").hide();
+	if ($(UI.MODE_MENU_CONTAINER).is(":visible")) 
+		$(UI.MODE_MENU_CONTAINER).hide();
 	else
-		$("#mode-menu-container").show();
+		$(UI.MODE_MENU_CONTAINER).show();
 }
 
 App.prototype.globalFind = function(query) {
@@ -180,24 +189,25 @@ App.prototype.renderSearchResults = function(searchResults, query) {
 }
 
 App.prototype.moveDownSearchResult = function() {
-	var nextSearchMatch = $(".search-match.active").next();
-	if (nextSearchMatch.length === 0) { nextSearchMatch = $(".search-match").first(); }
-	$(".search-match.active").removeClass("active");
+	var nextSearchMatch = $(UI.SEARCH_MATCH_ACTIVE).next();
+	if (nextSearchMatch.length === 0) { nextSearchMatch = $(UI.SEARCH_MATCH).first(); }
+	$(UI.SEARCH_MATCH_ACTIVE).removeClass("active");
 	$(nextSearchMatch).addClass("active");
 	var boundingRect = nextSearchMatch[0].getBoundingClientRect();
-	$(".search-match.active")[0].scrollIntoView({block: "end"});
+	$(UI.SEARCH_MATCH_ACTIVE)[0].scrollIntoView({block: "end"});
 }
 
 App.prototype.moveUpSearchResult = function() {
-	var prevSearchMatch = $(".search-match.active").prev();
+	var prevSearchMatch = $(UI.SEARCH_MATCH_ACTIVE).prev();
 	if (prevSearchMatch.length === 0) { prevSearchMatch = $(".search-match").last(); }
-	$(".search-match.active").removeClass("active");
+	$(UI.SEARCH_MATCH_ACTIVE).removeClass("active");
 	$(prevSearchMatch).addClass("active");
-	$(".search-match.active")[0].scrollIntoView({block: "top"});
+	$(UI.SEARCH_MATCH_ACTIVE)[0].scrollIntoView({block: "top"});
 }
 
 App.prototype.renderMath = function(element) {
 	if (element)
+
 		MathJax.Hub.Queue(["Typeset", MathJax.Hub, element]);
 	else
 		MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
@@ -220,4 +230,25 @@ App.prototype.openMatch = function() {
 			break;
 	}
 }
+
+App.prototype.initElasticSearch = function() {
+	// Check if there is an ealstic_search process running
+	
+	// If no process is found, start a new elastic_search process
+	elastic_search_command = 'elasticsearch'; 
+	elastic_search(myCmd,  function (error, stdout, stderr) {
+		if (error) {
+		 console.log(error.stack);
+		 console.log('Error code: '+error.code);
+		 console.log('Signal received: '+error.signal);
+		}
+		console.log('Child Process STDOUT: '+stdout);
+		console.log('Child Process STDERR: '+stderr);
+	}.bind(this));
+
+	elastic_search.on("exit", function(code) {
+		console.log('Child process exited with exit code '+code);
+	}.bind(this));
+}
+
 
