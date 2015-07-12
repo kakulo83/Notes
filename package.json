@@ -24,7 +24,7 @@
         "webkit"
     ], 
 		"dependencies": {
-				"ackmate-parser": "2.0.0"
+				"elasticsearch" : "5.0.0"
 		},
     "window": {
         "fullscreen": false, 

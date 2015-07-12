@@ -1,14 +1,37 @@
 **************************************** FEATURES TO ADD **************************************** 
-		
-		add index view
-			- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
-				like content in an object view 
 
-		add a QUESTIONS view where I can keep track of questions/queries that need to be answered
+		add more complex and powerful searching with elasticsearch	
+			- docs for js client:  
+	
+							https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/index.html 
+
+			- keep complex elasticsearch tags (ex "how do I create a new shard") in a hidden div 
+			- configure elasticsearch to search only parts of the contents HTML DOM
+			- scrub out html markup but maintain attributes like data-tags="tag1 tag2 ... tagN"
+			- https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-htmlstrip-charfilter.html
+			- https://www.elastic.co/guide/en/elasticsearch/guide/current/data-in-data-out.html
+
 
 		add global object file search with '<cTRL>p'
 			- Add ability to search multiple words i.e  "Cheat Sheet"
 			- Fix problem of highlighting multi word queries
+
+	
+		syncrhonize create/update/destroy in elasticsearch
+			- deleting a document should also delete the corresponding elasticsearch entry
+	
+		add INDEX view
+			- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
+				like content in an object view 
+
+
+		add QUESTIONS view 
+			- keep track of questions/queries that need to be answered
+
+
+		add code_content type
+			- colorize each languages differently (mimic railscasts)
+
 
 		add ability to augment content with tags that can be used with searching
 			- add tags to images
@@ -16,18 +39,14 @@
 			- add tags to text
 			- add tags to video
 
-		add more complex and powerful searching with elasticsearch	
-			- keep complex elasticsearch tags (ex "how do I create a new shard") in a hidden div 
-			- configure elasticsearch to search only parts of the contents HTML DOM
-			- scrub out html markup but maintain attributes like data-tags="tag1 tag2 ... tagN"
-			- https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-htmlstrip-charfilter.html
-			- https://www.elastic.co/guide/en/elasticsearch/guide/current/data-in-data-out.html
 
 		add ability to move tree-nodes (and their children) to new locations without having to make them orphans
+
 
 		syncrhonize tree mode nodes with object files
 			- Add prompt when I try to delete a tree node, the implication being that the corresponding
 				node.object file will be deleted	
+
 		
 		modify the mode-menu
 			- (A)ppend content should be entry point to adding new content.  If "a" is pressed, a 
@@ -64,11 +83,15 @@
 			- refactor object_controller.js makeActive function to simply accept a full filepath instead of "selection"
 				which is an object of type:  { "name": objectName, "file": filePath }
 
-		add code_content type
-			- colorize each languages differently (mimic railscasts)
-
 
 ******************************************  FIXES  ***************************************** 
+
+		- collapsing content error in process view
+
+				- open "creating an index process" node
+
+				- collapsing the first process results in the second one also be hidden and untoggleable
+
 
 		- linking is broken again:  ~ 975 in ObjectController 
 

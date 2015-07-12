@@ -2,10 +2,10 @@ var gui = require("nw.gui");
 var win = gui.Window.get();
 var nativeMenuBar = new gui.Menu({ type: "menubar" });
 
-var fs             = require("fs");
-var util           = require("util");
-var exec           = require('child_process').exec;
-var elastic_search = require('child_process').exec;
+var fs                   = require("fs");
+var util                 = require("util");
+var executeSilverSearcher   = require('child_process').exec;
+var executeElasticSearch = require('child_process').exec;
 
 var Utilities         = require("./js/utilities.js");
 var Constants         = require("./js/constants.js");
@@ -14,6 +14,7 @@ var IndexController   = require("./js/index_controller.js");
 var TreeController    = require("./js/tree_controller.js");
 var ObjectController  = require("./js/object_controller.js");
 var ProcessController = require("./js/process_controller.js");
+
 
 // check operating system for the menu
 if (process.platform === "darwin") {
@@ -64,7 +65,7 @@ App.prototype.init = function(subject) {
 	document.addEventListener("keydown", this.handleKeyPress.bind(this), false);
 	this.changeMode(Constants.Mode.TREE);
 
-	//this.initElasticSearch();
+	this.elasticsearchclient = this.initElasticSearch();
 }
 
 App.prototype.changeMode = function(mode, selection) {
@@ -117,12 +118,93 @@ App.prototype.toggleMenu = function() {
 		$(UI.MODE_MENU_CONTAINER).show();
 }
 
-App.prototype.globalFind = function(query) {
+App.prototype.updateElasticSearchIndex = function(data) {
+	var record = Utilities.getElasticSearchJson(data.html);
+
+	this.elasticsearchclient.create({
+		index: "notes",
+		type: this.subject,
+		id: Utilities.hashCode(data.file),
+		body: {
+			title: record.title,
+			content: record.body,
+			file: data.file
+		}
+	}, function(error, response) {
+		if (error === undefined)
+			console.log("elastic search update successful");
+	});
+}
+
+App.prototype.showGlobalFind = function() {
+	$("#global-search-container").show();	
+	$("#global-search-input").val("");
+	$("#global-search-input").focus();
+}
+
+App.prototype.globalFind = function() {
+	var searchterms = $("#global-search-input").val();
+
+	this.elasticsearchclient.search({
+		index: "notes",
+		type: this.subject,
+		body: {        
+   		query: {               
+   			match_phrase: {
+					content: searchterms
+				}
+  		}
+		}
+	}, function(searchterms, error, response) {
+		var hits = response.hits.hits;	
+		this.showGlobalFindResults(searchterms, hits);
+	}.bind(this,searchterms));
+
+	/*
+	this.elasticsearchclient.search({
+		index: "notes",
+		type: this.subject,
+		q: searchterms
+	}, function(query, error, response) {
+		var hits = response.hits.hits;	
+		this.showGlobalFindResults(searchterms, hits);
+	}.bind(this, searchterms));
+	*/
+}
+
+App.prototype.showGlobalFindResults = function(query, hits) {
+	// display results
+	results = _.map(hits, function(hit) {
+		var result = hit._source;
+		var title = result.title;
+		var content = result.content;
+		var file = result.file;
+		return { "title": title, "content": content, "file": file };
+	});
+
+	var data = { 
+		"query": query,
+		"results": results
+	};	
+	
+	// render results	
+	var searchResultsHtml =  window.Handlebars.templates.globalsearch(data);
+	$("#mode-container").append(searchResultsHtml);
+
+	// highlight matches
+	//$(".searchresults p:contains('configuration')");	
+}
+
+App.prototype.closeFind = function() {
+	$("#global-search-container").hide();
+}
+
+App.prototype.localFind = function(query) {
 	myCmd = 'ag --ackmate -G "(.object|.process)" --no-numbers -a -C ' + query + ' /Users/robertcarter/Documents/VIL/' + this.getSubject() + '.notes/';
 
 	var deferred = $.Deferred();
 
-	exec(myCmd,  function (query, deferred, error, stdout, stderr) {
+	executeSilverSearcher(myCmd,  function (query, deferred, error, stdout, stderr) {
 		if (error !== null) {
 			console.log('exec error: ' + error);
 			deferred.reject();
@@ -218,25 +300,50 @@ App.prototype.openMatch = function() {
 	var filepath = $(".search-match.active .filepath").text();
 	var fileExtension = /[^.]+$/.exec(filepath)[0];
 	var fileName = filepath.replace(/^.*[\\\/]/, '');
+	var selection = {};
 
 	switch (fileExtension) {
 		case Constants.FILETYPE.OBJECT:
-			var selection = { "name": fileName, "file": filepath };
+			selection = { "name": fileName, "file": filepath };
 			this.changeMode(Constants.Mode.OBJECT, selection);
 			break;
 		case Constants.FILETYPE.PROCESS:
-			var selection = { "name": fileName, "file": filepath };
+			selection = { "name": fileName, "file": filepath };
 			this.changeMode(Constants.Mode.PROCESS, selection);
 			break;
 	}
 }
 
 App.prototype.initElasticSearch = function() {
-	// Check if there is an ealstic_search process running
+	// Check if there is an ealstic_search process running by using the ElasticSearchClient to 
+	// attempt to contact elasticsearch on port 9200.  If no response is given, start a new
+	// elasticsearch process
+
+	var elasticsearch = require("elasticsearch");
+
+	var ElasticSearchClient = new elasticsearch.Client({
+		protocol: "https"
+	});
 	
-	// If no process is found, start a new elastic_search process
+  ElasticSearchClient.ping({
+		requestTimeout: 30000,
+		// undocumented params are appended to the query string
+			hello: "elasticsearch"
+		},
+
+		function (error) {
+			if (error) {
+				console.error('elasticsearch cluster is down!');
+			} else {
+				console.log('Elasticsearch cluster running :)');
+			}
+	});
+	
+	return ElasticSearchClient;
+		
+	/*
 	elastic_search_command = 'elasticsearch'; 
-	elastic_search(myCmd,  function (error, stdout, stderr) {
+	executeElasticSearch(elastic_search_command,  function (error, stdout, stderr) {
 		if (error) {
 		 console.log(error.stack);
 		 console.log('Error code: '+error.code);
@@ -249,6 +356,7 @@ App.prototype.initElasticSearch = function() {
 	elastic_search.on("exit", function(code) {
 		console.log('Child process exited with exit code '+code);
 	}.bind(this));
+	*/
 }
 
 

@@ -17,7 +17,8 @@ var State = {
 	QUICKLINK: 10,
 	POP_QUICKLINK: 11,
 	SEARCH_RESULTS: 12,
-	FOOTER_MENU: 13
+	FOOTER_MENU: 13,
+	GLOBAL_SEARCH: 14
 };
 
 var ProcessController = Object.create(ObjectController);
@@ -36,7 +37,6 @@ ProcessController.renderData = function(error, processes) {
 	if (processes) {
 		this.processes = $(processes).find(".process");
 		this.contents = $(processes).find(".content");
-		//this.setCurrentProcess(this.processes[0]);
 		$("#process-container").append(processes);
 	}
 	else {
@@ -80,12 +80,19 @@ ProcessController.handleKeyPress = function(e) {
 	if (this.state === State.NORMAL) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_F:
-				// show links on page
-				showYellowSelector();
-				if (e.shiftKey)
+ 				// show links on page
+				if (e.metaKey) {
+					this.app.showGlobalFind();
+					this.state = State.GLOBAL_SEARCH;
+				}
+				else if (e.shiftKey) {
+					showYellowSelector();
 					this.state = State.POP_QUICKLINK;
-				else
+				}
+				else {
+					showYellowSelector();
 					this.state = State.QUICKLINK;
+				}
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
 				this.app.changeMode(Constants.Mode.INDEX, null);
@@ -199,6 +206,19 @@ ProcessController.handleKeyPress = function(e) {
 				showCommandPrompt();
 				break;
 			default:
+		}
+	}
+	else if (this.state === State.GLOBAL_SEARCH) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				this.app.globalFind();	
+				this.state = State.SEARCH_RESULTS;
+				this.app.closeFind();
+				break;	
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				this.app.closeFind();	
+				this.state = State.NORMAL;
+				break;
 		}
 	}
 	else if (this.state === State.COMMANDPROMPT) {
@@ -618,6 +638,8 @@ ProcessController.save = function() {
 		console.log('It\'s saved!');
 	});
 	this.unsavedData = false;
+
+	this.app.updateElasticSearchIndex({ file: this.file, html: data });
 }
 
 function showCommandPrompt(placeholder) {

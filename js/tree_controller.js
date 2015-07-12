@@ -11,7 +11,8 @@ var State = {
 	MOVE_NODE: 5,
 	MOVE_ORPHAN: 6,
 	ORPHAN: 7,
-	SEARCH_RESULTS: 8
+	GLOBAL_SEARCH: 8,
+	SEARCH_RESULTS: 9
 };
 
 // TreeController is being referenced from app.js as a node module.  This means the javascript
@@ -134,7 +135,6 @@ TreeController.prototype.handleKeyPress = function(e) {
 			var query = String.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 
-
 			// If selection exists 
 			if ($(quicklink).length) {
 				// determine which quicklink was chosen, SVG <g> for tree node, or <a> for orphan
@@ -182,11 +182,30 @@ TreeController.prototype.handleKeyPress = function(e) {
 				break;
 		}
 	}
+	else if (this.state === State.GLOBAL_SEARCH) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				this.app.globalFind();	
+				this.state = State.SEARCH_RESULTS;
+				this.app.closeFind();
+				break;	
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				this.app.closeFind();	
+				this.state = State.NORMAL;
+				break;
+		}
+	}
 	else if (this.state === State.NORMAL) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_F:
-				this.state = State.QUICKLINK;
-				showYellowSelector();
+				if (e.metaKey) {
+					this.app.showGlobalFind();
+					this.state = State.GLOBAL_SEARCH;	
+				}
+				else {
+					this.state = State.QUICKLINK;
+					showYellowSelector();
+				}
 				break;
 			case Constants.KeyEvent.DOM_VK_H:
 				// Move to left node

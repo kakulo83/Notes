@@ -18,6 +18,17 @@ String.interpolate = function () {
 	return string;
 };
 
+exports.hashCode = function (string) {
+  var hash = 0, i, chr, len;
+  if (string.length == 0) return hash;
+  for (i = 0, len = string.length; i < len; i++) {
+    chr   = string.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+};
+
 JSON.circularStringify = function(object) {
 	/* ORIGINAL
 	return JSON.stringify(object, function(key, value) {
@@ -115,54 +126,19 @@ exports.parseAckmateString = function(input) {
 	return output;
 }
 
-
-
-// What are the best practices for bundling together services
-//
-// Upon startup should my notes program check if there is an ElasticSearch instance running?
-// seems reasonable to do. 
-//
-// Should notes program check if an ElasticSearch mapping exists?  
-
-exports.parseObjectFile = function(html) {
-
+exports.getElasticSearchJson = function(data) {
+	var record = {};
+	var editables = $(data).find(".editable").toArray();
+	var title = $(editables.shift()).text(); 
+	var body = _.reduce(editables, function(memo, editable) {
+		return memo + $(editable).text();
+	}, "");	
+	record.title = title;
+	record.body  = body;
+	return record;
 }
 
-exports.parseProcessFile = function(html) {
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Handlebar helpers */
 
 
 

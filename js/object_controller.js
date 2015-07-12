@@ -17,13 +17,8 @@ var State = {
 	COMMANDPROMPT: 9,
 	QUICKLINK: 10,
 	POP_QUICKLINK: 11,
-	SEARCH_RESULTS: 12
-};
-
-var Menu = {
-	NORMAL: 0,
-	VISUAL_SELECT: 1,
-	WORD: 2
+	SEARCH_RESULTS: 12,
+	GLOBAL_SEARCH: 13
 };
 
 var ObjectController = {
@@ -59,21 +54,26 @@ ObjectController.getData = function() {
 }
 
 ObjectController.renderData = function(error, object) {
-	var modeTemplate = Handlebars.templates.object;
-	$(UI.MODE_CONTAINER).html(modeTemplate());
+	var modeTemplate; 
 
-	// Init mutation observer that will watch for content changes
-	var targetNodes = $("#object-container, .text_content, .image_content");
-	var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
-	var DOMObserver = new MutationObserver (this.onObjectModified.bind(this));
-	var obsConfig = { childList: false, characterData: true, attributes: false, subtree: false };
-	targetNodes.each(function () {
-		DOMObserver.observe(this, obsConfig);
-	});
+	if (object) {
+		modeTemplate = Handlebars.templates.object;
+		$(UI.MODE_CONTAINER).html(modeTemplate());
+
+		this.contents = $(object).children(".content");
+		this.setCurrentContent(this.contents[0]);
+		$("#object-container").append(object);
+	}
+	else {
+		modeTemplate = Handlebars.templates.object_empty;
+		$(UI.MODE_CONTAINER).html(modeTemplate({ title: this.object.name }));
+		this.contents = [];
+		this.contents = this.contents.concat($(".content").toArray());
+	}
 
 	// Init drag-and-drop 
 	window.ondragover = function(e) { e.preventDefault(); return false };
-	window.ondrop = this.onDrop.bind(this); 
+	window.ondrop = this.onDrop.bind(this);
 	var droppableDiv = $("#object-container")[0];
 	droppableDiv.ondragover = function () { this.className = 'hover'; return false; };
 	droppableDiv.ondragleave = function () { this.className = ''; return false; };
@@ -81,32 +81,6 @@ ObjectController.renderData = function(error, object) {
 		e.preventDefault();
 		return false;
 	};
-
-	if (object) {
-		this.contents = $(object).children(".content");
-		this.setCurrentContent(this.contents[0]);
-		$("#object-container").append(object);
-	}
-	else {
-		var pTitle = window.document.createElement("P");
-		pTitle.className = "editable title";
-		pTitle.textContent = this.object.name;
-
-		var titleDiv = window.document.createElement("DIV");
-		titleDiv.className = "text_content content";
-		$(titleDiv).append(pTitle);
-		$("#object-container").prepend(titleDiv);
-
-		var new_text = window.document.createElement("DIV");
-		new_text.className = "text_content content active";
-		$(new_text).append("<p class='editable'>Add text</p>");
-		$("#object-container").append(new_text);			
-
-		this.contents = [];
-		this.contents.push(titleDiv);
-		this.contents.push(new_text);
-		this.setCurrentContent(new_text);
-	}
 
 	// render footer 
 	var footerTemplate = Handlebars.templates.footer;
@@ -150,15 +124,23 @@ ObjectController.setCurrentContent = function(content) {
 
 ObjectController.handleKeyPress = function(e) {
 	var charCode = (typeof e.which == "number") ? e.which : e.keyCode;
+
 	if (this.state === State.NORMAL) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_F:
 				// show links on page
-				showYellowSelector();
-				if (e.shiftKey)
+				if (e.metaKey) {
+					this.app.showGlobalFind();
+					this.state = State.GLOBAL_SEARCH;
+				}
+				else if (e.shiftKey) {
+					showYellowSelector();
 					this.state = State.POP_QUICKLINK;
-				else
+				}
+				else {
+					showYellowSelector();
 					this.state = State.QUICKLINK;
+				}
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
 				this.app.changeMode(Constants.Mode.INDEX, null);
@@ -272,6 +254,19 @@ ObjectController.handleKeyPress = function(e) {
 				showCommandPrompt();
 				break;
 			default:
+		}
+	}
+	else if (this.state === State.GLOBAL_SEARCH) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				this.app.globalFind();	
+				this.state = State.SEARCH_RESULTS;
+				this.app.closeFind();
+				break;	
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				this.app.closeFind();	
+				this.state = State.NORMAL;
+				break;
 		}
 	}
 	else if (this.state === State.COMMANDPROMPT) {
@@ -591,7 +586,7 @@ ObjectController.processCommandPrompt = function() {
 			hideCommandPrompt();			
 			break;
 		case "f":
-			var performSearch = this.app.globalFind(argument);
+			var performSearch = this.app.localFind(argument);
 			performSearch.done(function(haveResults) {
 				if (haveResults)
 					this.state = State.SEARCH_RESULTS;
@@ -958,6 +953,8 @@ ObjectController.save = function() {
 		console.log('It\'s saved!');
 	});
 	this.unsavedData = false;
+
+	this.app.updateElasticSearchIndex({ file: this.file, html: data });	
 }
 
 ObjectController.makeAnchor = function() {

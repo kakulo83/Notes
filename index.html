@@ -5,7 +5,7 @@
 		<meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<link href="./css/layout.css" rel="stylesheet" type="text/css">
-		<link href="./css/searchresults.css" rel="stylesheet" type="text/css">
+		<link href="./css/search.css" rel="stylesheet" type="text/css">
 		<link href="./css/index.css" rel="stylesheet" type="text/css">
 		<link href="./css/tree.css" rel="stylesheet" type="text/css">
 		<link href="./css/object.css" rel="stylesheet" type="text/css">
@@ -29,11 +29,7 @@
 		<script type="text/javascript" src="./lib/MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>	
 
 		<!-- Compiled Handlebar templates -->	
-		<script src="./templates/index.tpl.js" type="text/javascript" charset="utf-8"></script>
-		<script src="./templates/tree.tpl.js" type="text/javascript" charset="utf-8"></script>
-		<script src="./templates/process.tpl.js" type="text/javascript" charset="utf-8"></script>
-		<script src="./templates/content.tpl.js" type="text/javascript" charset="utf-8"></script>
-		<script src="./templates/footer.tpl.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./templates/compiled/helpers.tpl.js" type="text/javascript" charset="utf-8"></script>
 
 		<!-- VIL javascript files -->
 		<script src="./js/codemirror.js" type="text/javascript" charset="utf-8"></script>
@@ -42,11 +38,11 @@
 	
 	</head>
 	<body>
-		<div id="mode-container">
-			<!-- mode specific content -->
+		<div id="global-search-container" style="display: none;">
+			<div id="global-search"><input type="text" id="global-search-input"></div>
 		</div>
+		<div id="mode-container"></div>
 		<footer>
-			<!-- mode specific footer -->
 		</footer>	
 	</body>
 </html>
