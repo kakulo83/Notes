@@ -62,7 +62,7 @@ ObjectController.renderData = function(error, object) {
 
 		this.contents = $(object).children(".content");
 		this.setCurrentContent(this.contents[0]);
-		$("#object-container").append(object);
+		$(UI.OBJECT_CONTAINER).append(object);
 	}
 	else {
 		modeTemplate = Handlebars.templates.object_empty;
@@ -74,7 +74,7 @@ ObjectController.renderData = function(error, object) {
 	// Init drag-and-drop 
 	window.ondragover = function(e) { e.preventDefault(); return false };
 	window.ondrop = this.onDrop.bind(this);
-	var droppableDiv = $("#object-container")[0];
+	var droppableDiv = $(UI.OBJECT_CONTAINER)[0];
 	droppableDiv.ondragover = function () { this.className = 'hover'; return false; };
 	droppableDiv.ondragleave = function () { this.className = ''; return false; };
 	droppableDiv.ondrop = function (e) {
@@ -84,9 +84,7 @@ ObjectController.renderData = function(error, object) {
 
 	// render footer 
 	var footerTemplate = Handlebars.templates.footer;
-	var footerData = {
-		mode: Constants.Mode.OBJECT.toString()
-	};
+	var footerData = { mode: Constants.Mode.OBJECT.toString() };
 	$("footer").html(footerTemplate(footerData));
 
 	// render math
@@ -128,7 +126,6 @@ ObjectController.handleKeyPress = function(e) {
 	if (this.state === State.NORMAL) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_F:
-				// show links on page
 				if (e.metaKey) {
 					this.app.showGlobalFind();
 					this.state = State.GLOBAL_SEARCH;
@@ -230,12 +227,6 @@ ObjectController.handleKeyPress = function(e) {
 				// Folding Initiation key
 				this.state = State.FOLDING_CONTENT;
 				break;
-			case Constants.KeyEvent.DOM_VK_ADD:
-				// Zoom in?
-				break;
-			case Constants.KeyEvent.DOM_VK_SUBTRACT:
-				// Zoom out?
-				break;
 			case Constants.KeyEvent.DOM_VK_PERIOD:
 				if (! e.shiftKey)
 					return;
@@ -285,9 +276,6 @@ ObjectController.handleKeyPress = function(e) {
 	}
 	else if (this.state === State.FOOTER_MENU) {
 		//var vimWindow = window.open("vim.html", "_blank", 'screenX=0,screenY=0,width=800,height=600'); 
-		//this.state = State.VIM;
-		//this.openVI();					
-
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_A:
 				this.appendTextObject();
@@ -301,8 +289,9 @@ ObjectController.handleKeyPress = function(e) {
 				hideMenu();	
 				break;
 			case Constants.KeyEvent.DOM_VK_I:
+				e.preventDefault();
 				hideMenu();	
-				showCommandPrompt("enter file or url");	
+				showCommandPrompt("Enter Image file/url");	
 				this.state = State.IMAGE;
 				hideMenu();									
 				break;
@@ -326,7 +315,8 @@ ObjectController.handleKeyPress = function(e) {
 	else if (this.state === State.IMAGE) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_ESCAPE:
-			
+				hideCommandPrompt();
+				this.state = State.NORMAL;
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				var uri = $("#command-prompt").val();
@@ -522,36 +512,6 @@ ObjectController.handleKeyPress = function(e) {
 			if ($(quicklink).length) {
 				var objectName = $(quicklink).siblings(".object-link").attr("href");
 				var new_win = window.gui.Window.open("file:///Users/robertcarter/Downloads/dogsVscats.jpg?object=derp");
-
-				/*
-				function getParameterByName(name) {
-					name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-					var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-							results = regex.exec(location.search);
-					return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-				}
-				
-				function getParameter(theParameter) { 
-					var params = window.location.search.substr(1).split('&');
-				 
-					for (var i = 0; i < params.length; i++) {
-						var p=params[i].split('=');
-					if (p[0] == theParameter) {
-						return decodeURIComponent(p[1]);
-					}
-					}
-					return false;
-				}	
-
-				example:
-					http://technicaloverload.com?test1=yes&test2=no&test3=http%3A%2F%2Ftechnicaloverload.com%2F					
-
-					getParameter('test1') --> yes
-					getParameter('test2') --> no
-					getParameter('test3') --> http://technicaloverload.com/
-					getParameter('test4') --> false	
-				*/
-
 			}
 		}
 	}

@@ -441,21 +441,24 @@ TreeController.prototype.handleKeyPress = function(e) {
 }
 
 TreeController.prototype.getNextCousinNode = function() {
-	var stack = [];
-	stack.push(this.chart.nodes());
+	var queue = [];
+	queue.push(this.chart.nodes());
+	var currentNode;
 
-	while (stack.length > 0) {
-		var currentNode = stack.shift();
+	while (queue.length > 0) {
+		currentNode = queue.shift();
 
 		if (currentNode.depth === this.currentNode.depth) {
-			// find index of this.currentNode in the stack	
-			var index = stack.indexOf(this.currentNode);
+			// find index of this.currentNode in the queue	
+			var index = queue.indexOf(this.currentNode);
 			if (index >= 0) 
-				return stack[index+1];	
+				return queue[index+1];
+			else 
+				return queue[0];
 		}
 		if (currentNode.children) {
 			for (var i=0; i<currentNode.children.length; i++) {
-				stack.push(currentNode.children[i])
+				queue.push(currentNode.children[i])
 			}
 		}
 	}
@@ -463,21 +466,22 @@ TreeController.prototype.getNextCousinNode = function() {
 }
 
 TreeController.prototype.getPreviousCousinNode = function() {
-	var stack = [];
-	stack.push(this.chart.nodes());
+	var queue = [];
+	queue.push(this.chart.nodes());
 
-	while (stack.length > 0) {
-		var currentNode = stack.shift();
-
+	while (queue.length > 0) {
+		var currentNode = queue.shift();
 		if (currentNode.depth === this.currentNode.depth) {
-			// find index of this.currentNode in the stack	
-			var index = stack.indexOf(this.currentNode);
-			if (index >= 0)
-				return stack[index-1];	
+			// find index of this.currentNode in the queue	
+			var index = queue.indexOf(this.currentNode);
+			if (index > 0)
+				return queue[index-1];	
+			else
+				return currentNode;
 		}
 		if (currentNode.children) {
 			for (var i=0; i<currentNode.children.length; i++) {
-				stack.push(currentNode.children[i])
+				queue.push(currentNode.children[i])
 			}
 		}
 	}
