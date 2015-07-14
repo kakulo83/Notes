@@ -323,6 +323,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 				if (! this.ignoreKeyboardInput) {
 					this.state = State.MOVE_NODE;
 					showYellowSelector();	
+					hideMenuPrompt();
 					// this.ignoreKeyboardInput = true;
 				}
 				break;	
@@ -392,6 +393,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 			hideMenuPrompt();
 		}
 		else if (_.contains([ Constants.KeyEvent.DOM_VK_A, Constants.KeyEvent.DOM_VK_C, Constants.KeyEvent.DOM_VK_D, Constants.KeyEvent.DOM_VK_E, Constants.KeyEvent.DOM_VK_F, Constants.KeyEvent.DOM_VK_G, Constants.KeyEvent.DOM_VK_H, Constants.KeyEvent.DOM_VK_J, Constants.KeyEvent.DOM_VK_K, Constants.KeyEvent.DOM_VK_L, Constants.KeyEvent.DOM_VK_M, Constants.KeyEvent.DOM_VK_P, Constants.KeyEvent.DOM_VK_S, Constants.KeyEvent.DOM_VK_W ], charCode)) {
+
 			var newChar = String.fromCharCode(charCode);
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
@@ -400,21 +402,26 @@ TreeController.prototype.handleKeyPress = function(e) {
 			var quicklink = $(query);
 			if ($(quicklink).length) {
 				// determine the selected node
-				var parentNode = quicklink.parent().parent()[0].__data__;	
+				var newParentNode = quicklink.parent().parent()[0].__data__;	
 
 				// remove node from parent's children array
 				var indexToDestroy = $.inArray(this.currentNode, this.currentNode.parent.children);
 				this.currentNode.parent.children.splice(indexToDestroy, 1);
 	
 				// attach node as child to new parent
-				parentNode.children.push(this.currentNode);		
+				if (newParentNode.children)
+					newParentNode.children.push(this.currentNode);		
+				else {
+					newParentNode.children = [];
+					newParentNode.children.push(this.currentNode);		
+				}
 	
+				this.state = State.NORMAL;
+				removeYellowSelector();
+				this.keyStrokeStack = [];
+
 				// redraw tree
 				this.chart.update(this.chart.nodes());
-				
-				removeYellowSelector();
-				hideMenuPrompt();
-				this.state = State.NORMAL;
 			}
 		}
 		this.ignoreKeyboardInput = false;
