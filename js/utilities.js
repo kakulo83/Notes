@@ -1,4 +1,4 @@
-String.interpolate = function () {
+exports.interpolate = function () {
 	// First argument is the string where the interpolation occurs
 	// The next n arguments are the values to be interpolated into the string (denoted with '%@')
 	// ex:  String.interpolate("My what a big %@ you have", "ass");
@@ -28,6 +28,14 @@ exports.hashCode = function (string) {
   }
   return Math.abs(hash);
 };
+
+exports.caseInsensitiveContains = function($, arg) {
+	$.expr[":"].contains = $.expr.createPseudo(function(arg) {
+    return function( elem ) {
+        return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+    };
+	});
+}
 
 JSON.circularStringify = function(object) {
 	/* ORIGINAL
@@ -135,10 +143,6 @@ exports.getElasticSearchJson = function(data) {
 	}, "");	
 	record.title = title;
 	record.body  = body;
+	record.html  = data;
 	return record;
 }
-
-/* Handlebar helpers */
-
-
-

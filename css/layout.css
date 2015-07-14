@@ -28,9 +28,6 @@ body {
 	color: white;
 	margin: 0;
 }
-#mode-container p {
-	color: inherit;
-}
 #main-pane.INDEX {
 	background-color: red;
 }

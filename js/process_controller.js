@@ -82,7 +82,7 @@ ProcessController.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_F:
  				// show links on page
 				if (e.metaKey) {
-					this.app.showGlobalFind();
+					this.app.showGlobalFindInputField();
 					this.state = State.GLOBAL_SEARCH;
 				}
 				else if (e.shiftKey) {
@@ -211,7 +211,7 @@ ProcessController.handleKeyPress = function(e) {
 	else if (this.state === State.GLOBAL_SEARCH) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				this.app.globalFind();	
+				this.app.performGlobalFind();	
 				this.state = State.SEARCH_RESULTS;
 				this.app.closeFind();
 				break;	
@@ -459,7 +459,7 @@ ProcessController.handleKeyPress = function(e) {
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
 			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
-			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var query = Utilities.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 			if ($(quicklink).length) {
 				var objectName = $(quicklink).siblings(".object-link").text();
@@ -480,7 +480,7 @@ ProcessController.handleKeyPress = function(e) {
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
 			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
-			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var query = Utilities.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 			if ($(quicklink).length) {
 				var objectName = $(quicklink).siblings(".object-link").attr("href");
@@ -502,7 +502,7 @@ ProcessController.handleKeyPress = function(e) {
 				this.app.moveUpSearchResult();		
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				this.app.openMatch();
+				this.app.openSearchMatch();
 				break;
 		}
 	}
@@ -639,7 +639,7 @@ ProcessController.save = function() {
 	});
 	this.unsavedData = false;
 
-	this.app.updateElasticSearchIndex({ file: this.file, html: data });
+	this.app.addToElasticSearch({ file: this.file, html: data });
 }
 
 function showCommandPrompt(placeholder) {

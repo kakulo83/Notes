@@ -98,7 +98,7 @@ ObjectController.onDrop = function(e) {
 	if (! /image|video/.test(file.type)) return;
 
 	var destination = Constants.PATH + this.app.getSubject() + ".notes/data/" + file.name;
-	var mvFileCommand = String.interpolate("mv %@ %@", file.path, destination);
+	var mvFileCommand = Utilities.interpolate("mv %@ %@", file.path, destination);
 	
 	exec(mvFileCommand, function (destination, error, stdout, stderr) {
     if (error !== null) { console.log('exec error: ' + error); }
@@ -127,7 +127,7 @@ ObjectController.handleKeyPress = function(e) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_F:
 				if (e.metaKey) {
-					this.app.showGlobalFind();
+					this.app.showGlobalFindInputField();
 					this.state = State.GLOBAL_SEARCH;
 				}
 				else if (e.shiftKey) {
@@ -250,7 +250,7 @@ ObjectController.handleKeyPress = function(e) {
 	else if (this.state === State.GLOBAL_SEARCH) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				this.app.globalFind();	
+				this.app.performGlobalFind();	
 				this.state = State.SEARCH_RESULTS;
 				this.app.closeFind();
 				break;	
@@ -486,7 +486,7 @@ ObjectController.handleKeyPress = function(e) {
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
 			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
-			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var query = Utilities.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 			if ($(quicklink).length) {
 				var objectName = $(quicklink).siblings(".object-link").text();
@@ -507,7 +507,7 @@ ObjectController.handleKeyPress = function(e) {
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
 			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
-			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var query = Utilities.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 			if ($(quicklink).length) {
 				var objectName = $(quicklink).siblings(".object-link").attr("href");
@@ -528,7 +528,7 @@ ObjectController.handleKeyPress = function(e) {
 				this.app.moveUpSearchResult();		
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				this.app.openMatch();
+				this.app.openSearchMatch();
 				break;
 		}
 	}
@@ -728,7 +728,7 @@ ObjectController.closeVI = function(e) {
 		// reinsert links if their words are still in the updated text content
 		var links = this.vim.links;
 		_.each(links, function(link) {
-			var linkQuery = String.interpolate(".word:contains('%@'):first", link.innerHTML);
+			var linkQuery = Utilities.interpolate(".word:contains('%@'):first", link.innerHTML);
 			$(this.currentContent).find(linkQuery).html(link);
 		},this);
 	}
@@ -914,7 +914,7 @@ ObjectController.save = function() {
 	});
 	this.unsavedData = false;
 
-	this.app.updateElasticSearchIndex({ file: this.file, html: data });	
+	this.app.addToElasticSearch({ file: this.file, html: data });	
 }
 
 ObjectController.makeAnchor = function() {
@@ -947,13 +947,13 @@ ObjectController.showLinkOptions = function() {
 ObjectController.createLink = function(selectedOption) {
 	var target = selectedOption[0].dataset.file;
 	var targetText = $("span.currentWord").html();
-	var link   = String.interpolate("<a href='%@' class='object-link'>%@</a>", target, targetText);
+	var link   = Utilities.interpolate("<a href='%@' class='object-link'>%@</a>", target, targetText);
 	$("span.currentWord").html(link);
 }
 
 ObjectController.getLinkableObjects = function() {
 	var deferred = new $.Deferred();
-	var objectTreePath = String.interpolate("%@%@.notes/%@.tree", Constants.PATH, this.app.subject, this.app.subject);
+	var objectTreePath = Utilities.interpolate("%@%@.notes/%@.tree", Constants.PATH, this.app.subject, this.app.subject);
 	d3.json(objectTreePath, function(error, nodes) {
 		var linkableObjects = _.map(Utilities.flattenTree(nodes), function(object) {
 														return { "name": object.name, "file": object.file };	
@@ -1157,9 +1157,9 @@ window.Handlebars.registerHelper("localMenu", function(items, className) {
 	for (var i=0; i<items.length; i++) {
 		var id = items[i].toLowerCase().replace(/\s+/, "_");	
 		if (i === 0) 
-			menu = menu + String.interpolate("<li class='local-menu-item %@ active' data-id='%@'>", className, id) + items[i] + "</li>";
+			menu = menu + Utilities.interpolate("<li class='local-menu-item %@ active' data-id='%@'>", className, id) + items[i] + "</li>";
 		else 
-			menu = menu + String.interpolate("<li class='local-menu-item %@' data-id='%@'>", className, id) + items[i] + "</li>";
+			menu = menu + Utilities.interpolate("<li class='local-menu-item %@' data-id='%@'>", className, id) + items[i] + "</li>";
 	}
 	return menu = menu + "</ul>";
 });
@@ -1168,9 +1168,9 @@ window.Handlebars.registerHelper("linkOptions", function(items) {
 	var menu = "<ul class='local-menu'>";	
 	for (var i=0; i<items.length; i++) {
 		if (i === 0)
-			menu = menu + String.interpolate("<li class='local-menu-item link-option active' data-file='%@'>%@</li>", items[i].file, items[i].name);
+			menu = menu + Utilities.interpolate("<li class='local-menu-item link-option active' data-file='%@'>%@</li>", items[i].file, items[i].name);
 		else
-			menu = menu + String.interpolate("<li class='local-menu-item link-option' data-file='%@'>%@</li>", items[i].file, items[i].name);
+			menu = menu + Utilities.interpolate("<li class='local-menu-item link-option' data-file='%@'>%@</li>", items[i].file, items[i].name);
 	}
 	return menu = menu + "</ul>";
 });

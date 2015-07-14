@@ -52,12 +52,12 @@ TreeController.prototype.makeActive = function() {
 TreeController.prototype.getTreeData = function(subject) {
 	if (subject) {
 		this.subject = subject;
-		var file = String.interpolate("%@%@.notes/%@.tree", Constants.PATH, subject, subject); 
+		var file = Utilities.interpolate("%@%@.notes/%@.tree", Constants.PATH, subject, subject); 
 		d3.json(file, this.processData.bind(this));
 	}
 	else {
 		// create the tree json in memory with New_Subject as the root node
-		var file = 	String.interpolate("%@%@.notes/%@.json", Constants.PATH, subject, subject); 
+		var file = 	Utilities.interpolate("%@%@.notes/%@.json", Constants.PATH, subject, subject); 
 		var root = { "name": "New Subject", "file": file, "children": [], "orphans": [] };
 		this.file = null;
 		this.chart.nodes(root);
@@ -68,7 +68,7 @@ TreeController.prototype.getTreeData = function(subject) {
 TreeController.prototype.processData = function(error, nodes) {
 	if (nodes) {
 		// file and data exists
-		this.file = String.interpolate("%@%@.notes/%@.json", Constants.PATH, this.subject, this.subject); 
+		this.file = Utilities.interpolate("%@%@.notes/%@.json", Constants.PATH, this.subject, this.subject); 
 		this.chart.nodes(nodes);
 		if (nodes.orphans) 
 			this.orphans = nodes.orphans;
@@ -76,7 +76,7 @@ TreeController.prototype.processData = function(error, nodes) {
 	}
 	else {
 		// file/data not exist.  create the tree json in memory
-		var file = 	String.interpolate("%@%@.notes/%@.tree", Constants.PATH, this.subject, this.subject); 
+		var file = 	Utilities.interpolate("%@%@.notes/%@.tree", Constants.PATH, this.subject, this.subject); 
 		var root = { "name": this.subject , "file": file, "children": [], "orphans": [] };
 		this.file = null;
 		this.chart.nodes(root);
@@ -101,7 +101,7 @@ TreeController.prototype.renderView = function() {
 		// TODO replace this shitty solution with either a proper render complete callback or add promises 
 		setTimeout(function() {   //calls click event after a certain time
 			this.currentNode = this.chart.nodes();
-			var query = String.interpolate(".node.%@", this.chart.nodes().id);
+			var query = Utilities.interpolate(".node.%@", this.chart.nodes().id);
 			var rootNodeSVG = $(query);
 			d3.select(rootNodeSVG[0]).select("circle")
 				.attr("class", "current");
@@ -132,7 +132,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
 			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
-			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var query = Utilities.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 
 			// If selection exists 
@@ -185,7 +185,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 	else if (this.state === State.GLOBAL_SEARCH) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				this.app.globalFind();	
+				this.app.performGlobalFind();	
 				this.state = State.SEARCH_RESULTS;
 				this.app.closeFind();
 				break;	
@@ -199,7 +199,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_F:
 				if (e.metaKey) {
-					this.app.showGlobalFind();
+					this.app.showGlobalFindInputField();
 					this.state = State.GLOBAL_SEARCH;	
 				}
 				else {
@@ -390,7 +390,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
 			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
-			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var query = Utilities.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 			if ($(quicklink).length) {
 				// grab node and move it as a child to new parent
@@ -410,7 +410,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 			this.keyStrokeStack.push(newChar);
 			// Attempt to select node	
 			var linkLetters = this.keyStrokeStack.join("").toLowerCase();
-			var query = String.interpolate(".quicklink.%@", linkLetters);
+			var query = Utilities.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 			if ($(quicklink).length) {
 				// get the node that will become the parent
@@ -434,7 +434,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 				this.app.moveUpSearchResult();		
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
-				this.app.openMatch();
+				this.app.openSearchMatch();
 				break;
 		}
 	}
@@ -632,7 +632,7 @@ TreeController.prototype.renderOrphans = function() {
 }
 
 TreeController.prototype.getSVGFromNode = function(node) {
-	return $(String.interpolate(".node.%@", node.id));	
+	return $(Utilities.interpolate(".node.%@", node.id));	
 }
 
 TreeController.prototype.getNodeFromSVG = function(svgNode) {
@@ -663,7 +663,7 @@ TreeController.prototype.setCurrentNodeFromDataStructureSelect = function(newCur
 
 	// Find the graphical representation of the new current node
 	var id = newCurrentNode.id;
-	var query = String.interpolate("g.node.%@", id);
+	var query = Utilities.interpolate("g.node.%@", id);
 	var svgNode = $(query);	
 	
 	// remove class "current" on current graphical representation of a node
@@ -715,13 +715,13 @@ TreeController.prototype.processCommandPrompt = function() {
 	switch(option) {
 		case "w":
 			if (argument) {
-				var directoryPath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/", argument);
+				var directoryPath = Utilities.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/", argument);
 	
 				// check if the directory exists			
 				fs.realpath(directoryPath, function(err, resolvedPath) {
 					// directory exists; write to it
 					if (!err) {
-						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", argument, argument);
+						var filePath = Utilities.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", argument, argument);
 						writeToFile(file, this.chart.nodes());
 					}
 					// directory nonexistant;  create it first then write to it
@@ -729,20 +729,20 @@ TreeController.prototype.processCommandPrompt = function() {
 						var directoryPath = arguments[0];
 						fs.mkdirSync(directoryPath);
 						fs.mkdirSync(directoryPath + "/data/");
-						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", argument, argument);
+						var filePath = Utilities.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", argument, argument);
 						writeToFile(filePath, this.chart.nodes());
 					}
 				}.bind(this, directoryPath, argument));
 				this.subject = argument;
 			}
 			else if (this.subject) {
-				var directoryPath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/", this.subject);
+				var directoryPath = Utilities.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/", this.subject);
 
 				// check if the directory exists			
 				fs.realpath(directoryPath, function(directoryPath, subject, err, resolvedPath) {
 					if (!err) {
 						// directory exists; write to it
-						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subject, subject);
+						var filePath = Utilities.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subject, subject);
 						writeToFile(filePath, this.chart.nodes());
 					}
 					else {
@@ -753,7 +753,7 @@ TreeController.prototype.processCommandPrompt = function() {
 						fs.mkdirSync(directoryPath + "/objects/");
 						fs.mkdirSync(directoryPath + "/processes/");
 						fs.mkdirSync(directoryPath + "/data/");
-						var filePath = String.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subject , subject);
+						var filePath = Utilities.interpolate("/Users/robertcarter/Documents/VIL/%@.notes/%@.tree", subject , subject);
 						writeToFile(filePath, this.chart.nodes());
 					}
 				}.bind(this, directoryPath, this.subject));
@@ -762,11 +762,7 @@ TreeController.prototype.processCommandPrompt = function() {
 				$(".file").text("NO SUBJECT GIVEN");	
 			}
 			this.state = State.NORMAL;
-			break;
-		case "f":
-			this.app.globalFind(argument);
-			this.state = State.SEARCH_RESULTS;
-			break;
+		break;
 	}
 }
 
@@ -965,13 +961,13 @@ function tree() {
 							.text(function (d) {
 									return d.name;
 							})
-							.style("fill-opacity", 1e-6);
+							.style("fill-opacity", 1);
 
 			nodeUpdate.select("text")
 							.style("fill-opacity", 1);
 
 			nodeExit.select("text")
-							.style("fill-opacity", 1e-6);
+							.style("fill-opacity", 1); // 1e-6);
 	}
 
 	function renderLinks(nodes, source) {
@@ -1058,7 +1054,7 @@ function tree() {
 						.attr("dy", ".35em")
 						.attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
 						.text(function(d) { return d.name; })
-						.style("fill-opacity", 1e-6);
+						.style("fill-opacity", 1);
 
 		// Transition nodes to their new position.
 		var nodeUpdate = node.transition()

@@ -4,7 +4,7 @@ var nativeMenuBar = new gui.Menu({ type: "menubar" });
 
 var fs                   = require("fs");
 var util                 = require("util");
-var executeSilverSearcher   = require('child_process').exec;
+var executeSilverSearcher = require('child_process').exec;
 var executeElasticSearch = require('child_process').exec;
 
 var Utilities         = require("./js/utilities.js");
@@ -118,9 +118,44 @@ App.prototype.toggleMenu = function() {
 		$(UI.MODE_MENU_CONTAINER).show();
 }
 
+App.prototype.addToElasticSearch = function(data) {
+	this.elasticsearchclient.exists({
+		index: "notes",
+		type: this.subject,
+		id: Utilities.hashCode(data.file)
+	}, function(error, exists) {
+		if (exists === true) {
+			this.updateElasticSearchIndex(data);
+		} else {
+			this.createElasticSearchIndex(data);	
+		}
+	}.bind(this));	
+}
+
 App.prototype.updateElasticSearchIndex = function(data) {
 	var record = Utilities.getElasticSearchJson(data.html);
+	this.elasticsearchclient.update({
+		index: "notes",
+		type: this.subject,
+		id: Utilities.hashCode(data.file),
+		body: {
+			doc: {
+				title: record.title,
+				content: record.body,
+				rawHtml: record.html,
+				file: data.file
+			}
+		}
+	}, function(error, response) {
+		if (error) 
+			console.log("Update failed!");
+		else
+			console.log("Update successful");
+	});
+}
 
+App.prototype.createElasticSearchIndex = function(data) {
+	var record = Utilities.getElasticSearchJson(data.html);
 	this.elasticsearchclient.create({
 		index: "notes",
 		type: this.subject,
@@ -128,21 +163,25 @@ App.prototype.updateElasticSearchIndex = function(data) {
 		body: {
 			title: record.title,
 			content: record.body,
+			rawHtml: record.html,
 			file: data.file
 		}
 	}, function(error, response) {
-		if (error === undefined)
-			console.log("elastic search update successful");
+		if (error)
+			console.log("Create failed!");
+		else
+			console.log("Create successful");
 	});
 }
 
-App.prototype.showGlobalFind = function() {
-	$("#global-search-container").show();	
+App.prototype.showGlobalFindInputField = function() {
+	$("#global-search-container").show();
+	$("#global-search-input").attr("placeholder", "Enter query");
 	$("#global-search-input").val("");
 	$("#global-search-input").focus();
 }
 
-App.prototype.globalFind = function() {
+App.prototype.performGlobalFind = function() {
 	var searchterms = $("#global-search-input").val();
 
 	this.elasticsearchclient.search({
@@ -159,17 +198,6 @@ App.prototype.globalFind = function() {
 		var hits = response.hits.hits;	
 		this.showGlobalFindResults(searchterms, hits);
 	}.bind(this,searchterms));
-
-	/*
-	this.elasticsearchclient.search({
-		index: "notes",
-		type: this.subject,
-		q: searchterms
-	}, function(query, error, response) {
-		var hits = response.hits.hits;	
-		this.showGlobalFindResults(searchterms, hits);
-	}.bind(this, searchterms));
-	*/
 }
 
 App.prototype.showGlobalFindResults = function(query, hits) {
@@ -177,22 +205,20 @@ App.prototype.showGlobalFindResults = function(query, hits) {
 	results = _.map(hits, function(hit) {
 		var result = hit._source;
 		var title = result.title;
-		var content = result.content;
+		var html = result.rawHtml;
 		var file = result.file;
-		return { "title": title, "content": content, "file": file };
+		return { "title": title, "html": html, "file": file };
 	});
 
 	var data = { 
 		"query": query,
 		"results": results
-	};	
-	
+	};
+
 	// render results	
 	var searchResultsHtml =  window.Handlebars.templates.globalsearch(data);
 	$("#mode-container").append(searchResultsHtml);
 
-	// highlight matches
-	//$(".searchresults p:contains('configuration')");	
 }
 
 App.prototype.closeFind = function() {
@@ -201,9 +227,7 @@ App.prototype.closeFind = function() {
 
 App.prototype.localFind = function(query) {
 	myCmd = 'ag --ackmate -G "(.object|.process)" --no-numbers -a -C ' + query + ' /Users/robertcarter/Documents/VIL/' + this.getSubject() + '.notes/';
-
 	var deferred = $.Deferred();
-
 	executeSilverSearcher(myCmd,  function (query, deferred, error, stdout, stderr) {
 		if (error !== null) {
 			console.log('exec error: ' + error);
@@ -223,9 +247,13 @@ App.prototype.renderSearchResults = function(searchResults, query) {
 	var searchResultsDiv = window.document.createElement("DIV");
 	searchResultsDiv.className = "searchresults";	
 
-	var queryHeader = window.document.createElement("H3");
-	queryHeader.innerHTML = "Results for: " + query;
-	$(searchResultsDiv).append(queryHeader);
+	var header = window.document.createElement("H3");
+	header.innerHTML = "Results for: ";
+	var queryName = window.document.createElement("SPAN");
+	queryName.className = "queryname";
+	queryName.innerHTML = query;
+	$(header).append(queryName);
+	$(searchResultsDiv).append(header);
 
 	var searchMatchesContainer = window.document.createElement("DIV");
 	searchMatchesContainer.className = "search-matches-container";
@@ -255,12 +283,6 @@ App.prototype.renderSearchResults = function(searchResults, query) {
 			else {
 				var additionalContext = context[j].replace(classPattern, "").replace(idPattern, "");
 				$(matchDiv).append(additionalContext);
-
-				/*
-				$(matchDiv).find("div").removeClass().removeAttr("data-depth");
-				$(matchDiv).find("p:not(:first)").removeClass().attr("id", "");
-				$(matchDiv).find("h3").removeClass().attr("id", "");
-				*/
 			}
 		}
 		$(searchMatchesContainer).append(matchDiv);
@@ -289,13 +311,12 @@ App.prototype.moveUpSearchResult = function() {
 
 App.prototype.renderMath = function(element) {
 	if (element)
-
 		MathJax.Hub.Queue(["Typeset", MathJax.Hub, element]);
 	else
 		MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 }
 
-App.prototype.openMatch = function() {
+App.prototype.openSearchMatch = function() {
 	// determine match file type and open appropriate mode
 	var filepath = $(".search-match.active .filepath").text();
 	var fileExtension = /[^.]+$/.exec(filepath)[0];

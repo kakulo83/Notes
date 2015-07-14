@@ -1,9 +1,9 @@
 <div class="searchresults">
-	<h3>Results for {{query}}</h3>
+	<h3>Results for <span class="queryname">{{query}}</span></h3>
 	{{#each results}}	
 		<div class="search-match">
-			<p class="filepath">{{this.file}}</p>
-			<p class="match-content">{{this.content}}</p>
+			<p class="filepath">{{file}}</p>
+			<p class="match-content">{{{html}}}</p>
 		</div>		
 	{{/each}}	
 </div>

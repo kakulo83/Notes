@@ -1,24 +1,24 @@
 /* global search results template */
-(function() {
+ (function() {
   var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
 templates['globalsearch'] = template({"1":function(depth0,helpers,partials,data) {
-    var alias1=this.lambda, alias2=this.escapeExpression;
+    var stack1, helper, alias1=helpers.helperMissing, alias2="function";
 
   return "		<div class=\"search-match\">\n			<p class=\"filepath\">"
-    + alias2(alias1((depth0 != null ? depth0.file : depth0), depth0))
+    + this.escapeExpression(((helper = (helper = helpers.file || (depth0 != null ? depth0.file : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"file","hash":{},"data":data}) : helper)))
     + "</p>\n			<p class=\"match-content\">"
-    + alias2(alias1((depth0 != null ? depth0.content : depth0), depth0))
+    + ((stack1 = ((helper = (helper = helpers.html || (depth0 != null ? depth0.html : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"html","hash":{},"data":data}) : helper))) != null ? stack1 : "")
     + "</p>\n		</div>		\n";
 },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
     var stack1, helper;
 
-  return "<div class=\"searchresults\">\n	<h3>Results for "
+  return "<div class=\"searchresults\">\n	<h3>Results for <span class=\"queryname\">"
     + this.escapeExpression(((helper = (helper = helpers.query || (depth0 != null ? depth0.query : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"query","hash":{},"data":data}) : helper)))
-    + "</h3>\n"
+    + "</span></h3>\n"
     + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.results : depth0),{"name":"each","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
     + "</div>\n";
 },"useData":true});
-})();
+})();             
 
 
 /* footer template */

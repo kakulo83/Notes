@@ -1,24 +1,26 @@
 **************************************** FEATURES TO ADD **************************************** 
 
 		add more complex and powerful searching with elasticsearch	
-			- docs for js client:  
-	
-							https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/index.html 
-
 			- keep complex elasticsearch tags (ex "how do I create a new shard") in a hidden div 
-			- configure elasticsearch to search only parts of the contents HTML DOM
-			- scrub out html markup but maintain attributes like data-tags="tag1 tag2 ... tagN"
-			- https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-htmlstrip-charfilter.html
-			- https://www.elastic.co/guide/en/elasticsearch/guide/current/data-in-data-out.html
 
 
 		add global object file search with '<cTRL>p'
 			- Add ability to search multiple words i.e  "Cheat Sheet"
 			- Fix problem of highlighting multi word queries
 
+
+		add in-page content search with '/' 
+			- use Ag (silver searcher)
+
 	
 		syncrhonize create/update/destroy in elasticsearch
 			- deleting a document should also delete the corresponding elasticsearch entry
+
+
+		add code_content type
+			- Highlight library:  https://github.com/isagalaev/highlight.js
+			- colorize each languages differently (mimic railscasts)
+
 	
 		add INDEX view
 			- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
@@ -28,9 +30,6 @@
 		add QUESTIONS view 
 			- keep track of questions/queries that need to be answered
 
-
-		add code_content type
-			- colorize each languages differently (mimic railscasts)
 
 
 		add ability to augment content with tags that can be used with searching
@@ -57,8 +56,6 @@
 							(v)ideo
 							(m)ath text
 
-		add in-page content search with '/' 
-			- use Ag (silver searcher)
 
 		add additional hot-key navigation
 			- Shift+H, Shift+M, Shift_L should move the current content to HIGH/MIDDLE/LOW positions
