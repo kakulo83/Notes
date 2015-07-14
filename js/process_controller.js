@@ -18,7 +18,8 @@ var State = {
 	POP_QUICKLINK: 11,
 	SEARCH_RESULTS: 12,
 	FOOTER_MENU: 13,
-	GLOBAL_SEARCH: 14
+	GLOBAL_SEARCH: 14,
+	VIM: 15
 };
 
 var ProcessController = Object.create(ObjectController);
@@ -271,6 +272,7 @@ ProcessController.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_N:
 				hideMenu();
 				this.addNewProcess();
+				this.openVI();
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// process input from command prompt
@@ -398,7 +400,6 @@ ProcessController.handleKeyPress = function(e) {
 				// until next content AT same depth as current content or lesser depth				
 
 				// hide all nested content
-
 				var currentDepth = Number.parseInt(this.currentContent.dataset.depth);
 				$(this.currentContent).children().hide();
 				$(this.currentContent).prepend("<div class='folded-content'>+</div>");	
@@ -409,7 +410,7 @@ ProcessController.handleKeyPress = function(e) {
 				for (var i = start; i < this.contents.length; i++) {
 					var nextObject = this.contents[i];
 					var nextDepth = Number.parseInt(nextObject.dataset.depth);
-					if (nextDepth < currentDepth)
+					if (nextDepth < currentDepth || isNaN(nextDepth) )
 						break;	
 					$(nextObject).hide();
 				}
@@ -574,6 +575,7 @@ ProcessController.addNewProcess = function() {
 
 	var new_text = window.document.createElement("DIV");
 	new_text.className = "text_content content active";
+	
 	$(new_text).append("<p class='editable'>Add text</p>");
 
 	var newProcessDiv = window.document.createElement("DIV");

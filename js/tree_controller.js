@@ -4,7 +4,7 @@ var Utilities = require("./utilities.js");
 
 var State = { 
 	NORMAL: 0,
-	MENU: 1,
+	FOOTER_MENU: 1,
 	QUICKLINK: 2,
 	COMMANDPROMPT: 3,
 	SCROLL: 4,  // TODO Add a scroll mode where I can scroll the entire tree if it gets too big
@@ -259,7 +259,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
-				this.state = State.MENU;
+				this.state = State.FOOTER_MENU;
 				showMenu();	
 				// (Secondary) fold one level 
 				break;	
@@ -317,7 +317,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 			default:
 		}
 	}
-	else if (this.state === State.MENU) {
+	else if (this.state === State.FOOTER_MENU) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_M:
 				if (! this.ignoreKeyboardInput) {
@@ -339,16 +339,22 @@ TreeController.prototype.handleKeyPress = function(e) {
 					// keyboard input 
 					this.ignoreKeyboardInput = true;
 					if (e.shiftKey) {
-						var confirm = window.prompt("To delete this node, type 'yes'", "");
-						if (confirm.toLowerCase() === "yes") 
+						var confirm = window.prompt("To DELETE this node, type 'yes'", "");
+						if (confirm && confirm.toLowerCase() === "yes") {
 							this.deleteNode();
 							this.ignoreKeyboardInput = false;
+						} else {
+							hideMenuPrompt();						
+						}	
 					}
 					else {
 						var confirm = window.prompt("To detach this node, type 'yes'", "");
-						if (confirm.toLowerCase() === "yes") 
+						if (confirm && confirm.toLowerCase() === "yes") {
 							this.detachNode();
 							this.ignoreKeyboardInput = false;
+						} else {
+							hideMenuPrompt();						
+						}
 					}
 					this.state = State.NORMAL;
 				}
