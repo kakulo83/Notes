@@ -323,7 +323,7 @@ TreeController.prototype.handleKeyPress = function(e) {
 				if (! this.ignoreKeyboardInput) {
 					this.state = State.MOVE_NODE;
 					showYellowSelector();	
-					this.ignoreKeyboardInput = true;
+					// this.ignoreKeyboardInput = true;
 				}
 				break;	
 			case Constants.KeyEvent.DOM_VK_A:
@@ -399,11 +399,25 @@ TreeController.prototype.handleKeyPress = function(e) {
 			var query = Utilities.interpolate(".quicklink.%@", linkLetters);
 			var quicklink = $(query);
 			if ($(quicklink).length) {
-				// grab node and move it as a child to new parent
+				// determine the selected node
+				var parentNode = quicklink.parent().parent()[0].__data__;	
+
+				// remove node from parent's children array
+				var indexToDestroy = $.inArray(this.currentNode, this.currentNode.parent.children);
+				this.currentNode.parent.children.splice(indexToDestroy, 1);
+	
+				// attach node as child to new parent
+				parentNode.children.push(this.currentNode);		
+	
+				// redraw tree
+				this.chart.update(this.chart.nodes());
+				
+				removeYellowSelector();
+				hideMenuPrompt();
+				this.state = State.NORMAL;
 			}
 		}
 		this.ignoreKeyboardInput = false;
-		this.state = State.NORMAL;
 	}
 	else if (this.state === State.MOVE_ORPHAN) {
 		if (charCode === Constants.KeyEvent.DOM_VK_ESCAPE) {
