@@ -14,11 +14,15 @@ span.queryname {
 	padding: 25px;
   width: 45%;
   height: 100%;
-	top: 0;
+	top: 1px;
 	right: 0;
-	background: rgba(26, 24, 24, 0.97); 
+	background: rgba(26, 24, 24, 0.81); 
 	overflow-y: scroll;
 	overflow-x: hidden;
+	border-left: 1px solid rgba(255, 255, 255, 0.48);
+	border-top: 1px solid rgba(255, 255, 255, 0.48);
+  border-top-left-radius: 12px;
+  box-shadow: 1px -3px 12px rgba(94, 171, 226, 0.76);
 }
 .search-match.active {
   background-color: rgba(153, 50, 204, 0.27);

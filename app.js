@@ -184,6 +184,24 @@ App.prototype.showGlobalFindInputField = function() {
 App.prototype.performGlobalFind = function() {
 	var searchterms = $("#global-search-input").val();
 
+
+	this.elasticsearchclient.search({
+		index: "notes",
+		type: this.subject,
+		body: {
+			"query": {
+        "multi_match": {
+           "query": searchterms,
+           "fields": ["title", "content"]
+        }
+			}
+		}                 
+	}, function(searchterms, error, response) {
+		var hits = response.hits.hits;	
+		this.showGlobalFindResults(searchterms, hits);
+	}.bind(this,searchterms));
+	
+	/*
 	this.elasticsearchclient.search({
 		index: "notes",
 		type: this.subject,
@@ -198,6 +216,7 @@ App.prototype.performGlobalFind = function() {
 		var hits = response.hits.hits;	
 		this.showGlobalFindResults(searchterms, hits);
 	}.bind(this,searchterms));
+	*/
 }
 
 App.prototype.showGlobalFindResults = function(query, hits) {
@@ -219,6 +238,8 @@ App.prototype.showGlobalFindResults = function(query, hits) {
 	var searchResultsHtml =  window.Handlebars.templates.globalsearch(data);
 	$("#mode-container").append(searchResultsHtml);
 
+	// render any possible math
+	this.renderMath();
 }
 
 App.prototype.closeFind = function() {
