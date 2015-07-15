@@ -6,6 +6,7 @@ var fs                   = require("fs");
 var util                 = require("util");
 var executeSilverSearcher = require('child_process').exec;
 var executeElasticSearch = require('child_process').exec;
+var executeScreenCapture = require('child_process').exec;
 
 var Utilities         = require("./js/utilities.js");
 var Constants         = require("./js/constants.js");
@@ -183,8 +184,6 @@ App.prototype.showGlobalFindInputField = function() {
 
 App.prototype.performGlobalFind = function() {
 	var searchterms = $("#global-search-input").val();
-
-
 	this.elasticsearchclient.search({
 		index: "notes",
 		type: this.subject,
@@ -192,31 +191,15 @@ App.prototype.performGlobalFind = function() {
 			"query": {
         "multi_match": {
            "query": searchterms,
-           "fields": ["title", "content"]
-        }
+           "fields": ["title", "content"],
+					 "type": "phrase"
+         }
 			}
-		}                 
-	}, function(searchterms, error, response) {
-		var hits = response.hits.hits;	
-		this.showGlobalFindResults(searchterms, hits);
-	}.bind(this,searchterms));
-	
-	/*
-	this.elasticsearchclient.search({
-		index: "notes",
-		type: this.subject,
-		body: {        
-   		query: {               
-   			match_phrase: {
-					content: searchterms
-				}
-  		}
 		}
 	}, function(searchterms, error, response) {
 		var hits = response.hits.hits;	
 		this.showGlobalFindResults(searchterms, hits);
 	}.bind(this,searchterms));
-	*/
 }
 
 App.prototype.showGlobalFindResults = function(query, hits) {
@@ -236,7 +219,7 @@ App.prototype.showGlobalFindResults = function(query, hits) {
 
 	// render results	
 	var searchResultsHtml =  window.Handlebars.templates.globalsearch(data);
-	$("#mode-container").append(searchResultsHtml);
+	$("#global-search-container").after(searchResultsHtml);
 
 	// render any possible math
 	this.renderMath();
@@ -343,6 +326,7 @@ App.prototype.openSearchMatch = function() {
 	var fileExtension = /[^.]+$/.exec(filepath)[0];
 	var fileName = filepath.replace(/^.*[\\\/]/, '');
 	var selection = {};
+	$(".searchresults").remove();
 
 	switch (fileExtension) {
 		case Constants.FILETYPE.OBJECT:
@@ -401,4 +385,16 @@ App.prototype.initElasticSearch = function() {
 	*/
 }
 
+App.prototype.screenCapture = function(currentContent) {
+	// screencapture -s file 
+	var deferred = $.Deferred();
 
+	var screenPath = Constants.PATH + this.subject + ".notes/data/" + Utilities.hashCode(currentContent) + Date.now() + ".png";
+	var screencapture_command = Utilities.interpolate("screencapture -s %@", screenPath);	
+	
+	executeScreenCapture(screencapture_command, function(deferred, screenPath) {
+		deferred.resolve(screenPath);
+	}.bind(this, deferred, screenPath));
+
+	return deferred;
+}

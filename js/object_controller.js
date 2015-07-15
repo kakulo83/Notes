@@ -18,7 +18,8 @@ var State = {
 	QUICKLINK: 10,
 	POP_QUICKLINK: 11,
 	SEARCH_RESULTS: 12,
-	GLOBAL_SEARCH: 13
+	GLOBAL_SEARCH: 13,
+	ADD_CONTENT_MENU: 14
 };
 
 var ObjectController = {
@@ -278,8 +279,8 @@ ObjectController.handleKeyPress = function(e) {
 		//var vimWindow = window.open("vim.html", "_blank", 'screenX=0,screenY=0,width=800,height=600'); 
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_A:
-				this.appendTextObject();
-				hideMenu();
+				this.state = State.ADD_CONTENT_MENU;
+				this.showAddContentSubMenu();
 				break;
 			case Constants.KeyEvent.DOM_VK_D:
 				this.deleteContent();
@@ -287,17 +288,6 @@ ObjectController.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_E:
 				this.editTextObject();
 				hideMenu();	
-				break;
-			case Constants.KeyEvent.DOM_VK_I:
-				e.preventDefault();
-				hideMenu();	
-				showCommandPrompt("Enter Image file/url");	
-				this.state = State.IMAGE;
-				hideMenu();									
-				break;
-			case Constants.KeyEvent.DOM_VK_M:
-				hideMenu();
-				this.appendMathObject();
 				break;
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// process input from command prompt
@@ -532,6 +522,50 @@ ObjectController.handleKeyPress = function(e) {
 				break;
 		}
 	}
+	else if (this.state === State.ADD_CONTENT_MENU) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				hideMenu();
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_T:
+				this.appendTextObject();
+				hideMenu();
+				break;
+			case Constants.KeyEvent.DOM_VK_I:
+				e.preventDefault();
+				hideMenu();
+				showCommandPrompt("Enter Image file/url");
+				this.state = State.IMAGE;
+				hideMenu();									
+				break;
+			case Constants.KeyEvent.DOM_VK_M:
+				hideMenu();
+				this.appendMathObject();
+				break;
+			case Constants.KeyEvent.DOM_VK_S:
+				hideMenu();
+				$.when(this.app.screenCapture(this.object.name)).then(function(screenPath) {
+					var newObjectDiv = window.document.createElement("DIV");
+					newObjectDiv.className = "image_content content";	
+					newObjectDiv.setAttribute("data-depth", 0);
+					var image = window.document.createElement("IMG");
+					image.src = screenPath;
+					newObjectDiv.appendChild(image);		
+					$(this.currentContent).after(newObjectDiv);
+					this.contents.push(newObjectDiv);
+					this.setCurrentContent(newObjectDiv);
+					this.state = State.NORMAL;
+				}.bind(this));
+				break;
+		}
+	}
+}
+
+ObjectController.showAddContentSubMenu = function() {
+	var subMenu = Handlebars.templates.add_content_menu;
+	var options = { options: ["(t)ext", "(i)mage", "(s)creenshot", "(m)ath latex" ] };
+	$("#mode-menu-container").html(subMenu(options));
 }
 
 ObjectController.processCommandPrompt = function() {
@@ -558,7 +592,7 @@ ObjectController.processCommandPrompt = function() {
 	}
 }
 
-ObjectController.showObject = function() { }
+//ObjectController.showObject = function() { }
 
 ObjectController.showProcess = function() {
 	var fileComponents = this.file.split(/\//);
@@ -582,12 +616,12 @@ ObjectController.showFooterMenu = function() {
 	if ($(".content").length > 0) {	
 		footerData = {
 			mode: Constants.Mode.OBJECT.toString(),
-			options: ["(e)dit", "(a)ppend text", "(i)nsert image", "(m)athematics", "(d)elete" ] 
+			options: ["(e)dit", "(a)dd content", "(d)elete" ] 
 		};
 	} else {
 		footerData = {
 			node: Constants.Mode.OBJECT.toString(),
-			options: ["(i)nsert text", "(a)ppend image"]
+			options: ["(a)dd content"]
 		};	
 	}
 

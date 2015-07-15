@@ -41,6 +41,23 @@ templates['footer'] = template({"1":function(depth0,helpers,partials,data) {
 },"useData":true});
 })();
 
+/* add content add_content_menu */
+(function() {
+  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
+templates['add_content_menu'] = template({"1":function(depth0,helpers,partials,data) {
+    return "		<li class=\"menu-item\">"
+    + this.escapeExpression(this.lambda(depth0, depth0))
+    + "<li>\n";
+},"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+    var stack1;
+
+  return "<ul class=\"sub-menu\">\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.options : depth0),{"name":"each","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "</ul>\n";
+},"useData":true});
+})();            
+                                                                                                    
+
 
 /* tree template */
 (function() {
