@@ -32,9 +32,9 @@ $(document).ready(function() {
 	window.Handlebars = Handlebars;
 	window._ = _;
 	window.CodeMirror = CodeMirror;
+	window.hljs = hljs;
 	win.showDevTools();
 	var subject = gui.App.argv[0];
-	debugger
 	app = new App();
 	app.init(subject);
 });

@@ -24,8 +24,7 @@
         "webkit"
     ], 
 		"dependencies": {
-				"elasticsearch" : "5.0.0",
-				"highlight": "0.2.3"
+				"elasticsearch" : "5.0.0"
 		},
     "window": {
         "fullscreen": false, 

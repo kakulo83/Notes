@@ -346,8 +346,8 @@ ObjectController.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// Determine which action has been selected and execute it
 				var activeMenuItem = $(".local-menu-item.active");
-				this.processVisualSelection(activeMenuItem);	
 				this.state = State.NORMAL;	
+				this.processVisualSelection(activeMenuItem);	
 				break;
 		}
 	}
@@ -549,10 +549,6 @@ ObjectController.handleKeyPress = function(e) {
 				showCommandPrompt("Enter Image file/url");
 				this.state = State.IMAGE;
 				break;
-			case Constants.KeyEvent.DOM_VK_M:
-				hideMenu();
-				this.appendMathObject();
-				break;
 			case Constants.KeyEvent.DOM_VK_S:
 				hideMenu();
 				$.when(this.app.screenCapture(this.object.name)).then(function(screenPath) {
@@ -580,7 +576,7 @@ ObjectController.handleKeyPress = function(e) {
 
 ObjectController.showAddContentSubMenu = function() {
 	var subMenu = Handlebars.templates.add_content_menu;
-	var options = { options: ["(t)ext", "(i)mage", "(s)creenshot", "(m)ath latex", "(v)ideo" ] };
+	var options = { options: ["(t)ext", "(i)mage", "(s)creenshot", "(v)ideo" ] };
 	$("#mode-menu-container").html(subMenu(options));
 }
 
@@ -650,6 +646,14 @@ ObjectController.showVisualSelectMenu = function() {
 	var localMenuDiv = window.document.createElement("DIV");
 	localMenuDiv.className = "local-menu-container";
 	var localMenu = window.Handlebars.helpers.localMenu(["Increase font", "Decrease font", "Make Bold", "Interpret as LaTeX", "Interpret as Code", "Undo", "Change me in showVisualSelectionMenu function"]);
+	$(localMenuDiv).append(localMenu);
+	$(this.currentContent).prepend(localMenuDiv);
+}
+
+ObjectController.showCodeLanguageMenu = function() {
+	var localMenuDiv = window.document.createElement("DIV");
+	localMenuDiv.className = "local-menu-container";
+	var localMenu = window.Handlebars.helpers.localMenu(["Javascript", "Ruby", "Scheme", "Html", "CSS", "C++", "C", "Objective-C", "Lisp", "Java" ]);
 	$(localMenuDiv).append(localMenu);
 	$(this.currentContent).prepend(localMenuDiv);
 }
@@ -1111,6 +1115,50 @@ ObjectController.processVisualSelection = function(selection) {
 			this.app.renderMath();
 			break;
 		case "interpret_as_code":
+			this.showCodeLanguageMenu();	
+			this.state = State.VISUAL_SELECT;	
+			break;
+		case "javascript":
+			//$(text).addClass("javascript");
+			//window.hljs.highlightBlock(text);
+
+			var code = $(text).text();			
+			$(text).html("");
+
+			var codetag = window.document.createElement("CODE");
+			$(codetag).addClass("javascript hljs");
+			$(codetag).text(code);
+			$(text).append(codetag);
+			$("pre code").each(function(i, block) {
+				window.hljs.highlightBlock(block);
+			});
+	
+			break;
+		case "ruby":
+
+			break;
+		case "scheme":
+	
+			break;
+		case "html":
+
+			break;
+		case "css":
+
+			break;
+		case "c++":
+
+			break;
+		case "c":
+
+			break;
+		case "objective-c":
+
+			break;
+		case "lisp":
+			
+			break;
+		case "java":
 
 			break;
 		case "undo":

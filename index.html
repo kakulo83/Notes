@@ -13,7 +13,8 @@
 		<link href="./css/process.css" rel="stylesheet" type="text/css">
 		<link href="./css/codemirror.css" rel="stylesheet" type="text/css">
 		<link href="./css/tests.css" rel="stylesheet" type="text/css">	
-		<link href="./node_modules/highlight.js/styles/solarized_dark.css" type="text/css">
+		<link href="./css/highlight.css" rel="stylesheet" type="text/css">
+		<link href="./css/solarized_dark.css" rel="stylesheet" type="text/css">
 
 		<!-- libraries -->
 		<script src="./lib/jquery-1.11.2.min.js" type="text/javascript" charset="utf-8"></script>
@@ -24,10 +25,8 @@
 			MathJax.Hub.Config({ tex2jax: { inlineMath: [["$$","$$"],["\\(","\\)"]] } });
 		</script>
 		<script type="text/javascript" src="./lib/MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>	
-		<script type="text/javascript" src="./node_modules/highlight.js/lib/highlight.js"></script>
-		<script type="text/javascript">
-			hljs.initHighlightingOnLoad();
-		</script>
+		<script src="./lib/highlight.pack.js"></script>
+		<script>hljs.initHighlightingOnLoad();</script>
 
 		<!-- Compiled handlebar templates -->	
 		<script src="./templates/compiled/helpers.tpl.js" type="text/javascript" charset="utf-8"></script>
