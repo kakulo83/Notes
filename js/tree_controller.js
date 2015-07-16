@@ -789,7 +789,18 @@ TreeController.prototype.processCommandPrompt = function() {
 				$(".file").text("NO SUBJECT GIVEN");	
 			}
 			this.state = State.NORMAL;
-		break;
+			break;
+		case "o":
+			if (argument) {
+				this.state = State.NORMAL;
+				this.app.setSubject(argument);
+				this.getTreeData(argument);
+			} 
+			else {
+				this.state = State.NORMAL;
+				$(".file").text("NO SUBJECT GIVEN");	
+			}
+			break;	
 	}
 }
 

@@ -347,8 +347,6 @@ ObjectController.handleKeyPress = function(e) {
 				// Determine which action has been selected and execute it
 				var activeMenuItem = $(".local-menu-item.active");
 				this.processVisualSelection(activeMenuItem);	
-				hideLocalMenu(this.currentContent);			
-				$(this.currentContent).find(".editable").removeClass("highlighted");
 				this.state = State.NORMAL;	
 				break;
 		}
@@ -651,7 +649,7 @@ ObjectController.showFooterMenu = function() {
 ObjectController.showVisualSelectMenu = function() {
 	var localMenuDiv = window.document.createElement("DIV");
 	localMenuDiv.className = "local-menu-container";
-	var localMenu = window.Handlebars.helpers.localMenu(["Increase font", "Decrease font", "Make Bold", "Undo", "change me in showVisualSelectionMenu function"], "");
+	var localMenu = window.Handlebars.helpers.localMenu(["Increase font", "Decrease font", "Make Bold", "Interpret as LaTeX", "Interpret as Code", "Undo", "Change me in showVisualSelectionMenu function"]);
 	$(localMenuDiv).append(localMenu);
 	$(this.currentContent).prepend(localMenuDiv);
 }
@@ -1087,6 +1085,9 @@ ObjectController.processVisualSelection = function(selection) {
 	var id = $(".local-menu-item.active").data("id");
 	var text = $(".content.active .editable");
 
+	hideLocalMenu(this.currentContent);			
+	$(this.currentContent).find(".editable").removeClass("highlighted");
+	
 	switch(id) {
 		case "increase_font":
 			var newSize = parseInt($(text).css("font-size").replace("px","")) + 5;
@@ -1097,7 +1098,20 @@ ObjectController.processVisualSelection = function(selection) {
 			$(text).css("font-size", newSize.toString() + "px");
 			break;
 		case "make_bold":
-			$(text).css("font-weight", "bold");		
+			$(text).css("font-weight", "bold");
+			break;
+		case "interpret_as_latex":
+			var latex = $(text).text();
+			var style = $(".content.active .editable").attr("style"); 
+			var ptag = window.document.createElement("P");
+			$(ptag).attr("style", style);
+			$(ptag).addClass("editable math");
+			$(ptag).text(latex);
+			$(text).replaceWith(ptag);
+			this.app.renderMath();
+			break;
+		case "interpret_as_code":
+
 			break;
 		case "undo":
 			$(text).css("font-size", "inherit");
@@ -1224,7 +1238,7 @@ function removeYellowSelector() {
 window.Handlebars.registerHelper("localMenu", function(items, className) {
 	var menu = "<ul class='local-menu'>";
 	for (var i=0; i<items.length; i++) {
-		var id = items[i].toLowerCase().replace(/\s+/, "_");	
+		var id = items[i].toLowerCase().replace(/ /g, "_");	
 		if (i === 0) 
 			menu = menu + Utilities.interpolate("<li class='local-menu-item %@ active' data-id='%@'>", className, id) + items[i] + "</li>";
 		else 

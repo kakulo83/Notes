@@ -34,6 +34,7 @@ $(document).ready(function() {
 	window.CodeMirror = CodeMirror;
 	win.showDevTools();
 	var subject = gui.App.argv[0];
+	debugger
 	app = new App();
 	app.init(subject);
 });
@@ -359,15 +360,17 @@ App.prototype.initElasticSearch = function() {
 
 		function (error) {
 			if (error) {
-				console.error('elasticsearch cluster is down!');
+				console.error('Elasticsearch cluster is down!');
+				this.startElasticSearch();
 			} else {
 				console.log('Elasticsearch cluster running :)');
 			}
-	});
+	}.bind(this));
 	
 	return ElasticSearchClient;
-		
-	/*
+}
+
+App.prototype.startElasticSearch = function() {
 	elastic_search_command = 'elasticsearch'; 
 	executeElasticSearch(elastic_search_command,  function (error, stdout, stderr) {
 		if (error) {
@@ -375,14 +378,9 @@ App.prototype.initElasticSearch = function() {
 		 console.log('Error code: '+error.code);
 		 console.log('Signal received: '+error.signal);
 		}
-		console.log('Child Process STDOUT: '+stdout);
-		console.log('Child Process STDERR: '+stderr);
+		console.log('Elasticsearch Process STDOUT: '+stdout);
+		console.log('Elasticsearch cluster running :)');
 	}.bind(this));
-
-	elastic_search.on("exit", function(code) {
-		console.log('Child process exited with exit code '+code);
-	}.bind(this));
-	*/
 }
 
 App.prototype.screenCapture = function(currentContent) {

@@ -1,4 +1,7 @@
-/**************** object *******************/
+@font-face {
+	font-family: inconsolata;
+	src: url(./fonts/inconsolata.woff);
+}
 #object-container h3#title { margin-top: 0; }
 #object-container .content, #object-container .content.depth-0 {
 	border-left: solid transparent;
