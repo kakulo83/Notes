@@ -314,6 +314,19 @@ ObjectController.handleKeyPress = function(e) {
 				break;
 		}
 	}
+	else if (this.state === State.VIDEO) {
+		switch(charCode) {
+			case Constants.KeyEvent.DOM_VK_ESCAPE:
+				hideCommandPrompt();
+				this.state = State.NORMAL;
+				break;
+			case Constants.KeyEvent.DOM_VK_RETURN:
+				var uri = $("#command-prompt").val();
+				this.appendVideoObject(uri);
+				this.state = State.NORMAL;
+				break;
+		}
+	}
 	else if (this.state === State.VISUAL_SELECT) {
 		switch(charCode) {
 			case Constants.KeyEvent.DOM_VK_ESCAPE:
@@ -537,7 +550,6 @@ ObjectController.handleKeyPress = function(e) {
 				hideMenu();
 				showCommandPrompt("Enter Image file/url");
 				this.state = State.IMAGE;
-				hideMenu();									
 				break;
 			case Constants.KeyEvent.DOM_VK_M:
 				hideMenu();
@@ -558,13 +570,19 @@ ObjectController.handleKeyPress = function(e) {
 					this.state = State.NORMAL;
 				}.bind(this));
 				break;
+			case Constants.KeyEvent.DOM_VK_V:
+				e.preventDefault();
+				hideMenu();
+				showCommandPrompt("Enter Video file/url");	
+				this.state = State.VIDEO;
+				break;
 		}
 	}
 }
 
 ObjectController.showAddContentSubMenu = function() {
 	var subMenu = Handlebars.templates.add_content_menu;
-	var options = { options: ["(t)ext", "(i)mage", "(s)creenshot", "(m)ath latex" ] };
+	var options = { options: ["(t)ext", "(i)mage", "(s)creenshot", "(m)ath latex", "(v)ideo" ] };
 	$("#mode-menu-container").html(subMenu(options));
 }
 
@@ -821,6 +839,23 @@ ObjectController.appendImageObject = function(uri) {
 	this.contents.push(newObjectDiv);
 	this.setCurrentContent(newObjectDiv);
 	this.state = State.NORMAL;
+}
+
+ObjectController.appendVideoObject = function(uri) {
+	hideCommandPrompt();
+	var newObjectDiv = window.document.createElement("DIV");
+	newObjectDiv.className = "video_content content";	
+	newObjectDiv.setAttribute("data-depth", 0);
+
+	var video = window.document.createElement("VIDEO");
+	video.src = uri;
+	video.controls = true;
+
+	newObjectDiv.appendChild(video);		
+
+	$(this.currentContent).after(newObjectDiv);
+	this.contents.push(newObjectDiv);
+	this.setCurrentContent(newObjectDiv);
 }
 
 ObjectController.appendMathObject = function() {
