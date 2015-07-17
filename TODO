@@ -80,6 +80,8 @@
 
 ******************************************  FIXES  ***************************************** 
 
+		- appending between content results it being pushed to the end of all content
+
 		- collapsing content error in process view
 
 				- open "creating an index process" node

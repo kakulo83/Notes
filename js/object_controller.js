@@ -830,15 +830,18 @@ ObjectController.appendImageObject = function(uri) {
 	var newObjectDiv = window.document.createElement("DIV");
 	newObjectDiv.className = "image_content content";	
 	newObjectDiv.setAttribute("data-depth", 0);
-
 	var image = window.document.createElement("IMG");
 	image.src = uri;
-
 	newObjectDiv.appendChild(image);		
-
-
 	$(this.currentContent).after(newObjectDiv);
-	this.contents.push(newObjectDiv);
+
+	// GET INDEX OF CURRENTCONTENT (we might be appending content in the middle of the page) SPLICE NEW CONTENT
+	var indexCurrent = $.inArray(this.currentContent, this.contents);
+	if (indexCurrent < this.contents.length - 1)
+		this.contents.splice(indexCurrent+1, 0, newObjectDiv);	
+	else 
+		this.contents.push(newObjectDiv);
+
 	this.setCurrentContent(newObjectDiv);
 	this.state = State.NORMAL;
 }
@@ -1119,12 +1122,8 @@ ObjectController.processVisualSelection = function(selection) {
 			this.state = State.VISUAL_SELECT;	
 			break;
 		case "javascript":
-			//$(text).addClass("javascript");
-			//window.hljs.highlightBlock(text);
-
 			var code = $(text).text();			
 			$(text).html("");
-
 			var codetag = window.document.createElement("CODE");
 			$(codetag).addClass("javascript hljs");
 			$(codetag).text(code);
@@ -1132,40 +1131,53 @@ ObjectController.processVisualSelection = function(selection) {
 			$("pre code").each(function(i, block) {
 				window.hljs.highlightBlock(block);
 			});
-	
 			break;
 		case "ruby":
-
+			this.wrapTextInCodeTag(text, "ruby");			
 			break;
 		case "scheme":
-	
+			this.wrapTextInCodeTag(text, "scheme");
 			break;
 		case "html":
-
+			this.wrapTextInCodeTag(text, "html");			
 			break;
 		case "css":
-
+			this.wrapTextInCodeTag(text, "css");			
 			break;
 		case "c++":
-
+			this.wrapTextInCodeTag(text, "c++");			
 			break;
 		case "c":
-
+			this.wrapTextInCodeTag(text, "c");			
 			break;
 		case "objective-c":
-
+			this.wrapTextInCodeTag(text, "objective-c");			
 			break;
 		case "lisp":
-			
+			this.wrapTextInCodeTag(text, "lisp");			
 			break;
 		case "java":
-
+			this.wrapTextInCodeTag(text, "java");			
 			break;
 		case "undo":
+			// TODO Add code and LaTeX undo action
 			$(text).css("font-size", "inherit");
 			$(text).css("font-weight", "normal");
 			break;
 	}	
+}
+
+ObjectController.wrapTextInCodeTag = function(text, language) {
+	var code = $(text).text();			
+	$(text).html("");
+
+	var codetag = window.document.createElement("CODE");
+	$(codetag).addClass(Utilities.interpolate("%@ hljs", language));
+	$(codetag).text(code);
+	$(text).append(codetag);
+	$("pre code").each(function(i, block) {
+		window.hljs.highlightBlock(block);
+	});
 }
 
 ObjectController.increaseFoldDpeth = function(currentContent) {
