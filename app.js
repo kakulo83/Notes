@@ -222,6 +222,29 @@ App.prototype.showGlobalFindResults = function(query, hits) {
 	var searchResultsHtml =  window.Handlebars.templates.globalsearch(data);
 	$("#global-search-container").after(searchResultsHtml);
 
+	// highlight where query is matched
+	var DomQuery = Utilities.interpolate(".text_content *:contains('%@')",query);
+	var queryComponents = query.split(" ");
+	var context = { queryComponents: queryComponents };
+	var elementsContainingQuery = $(DomQuery).toArray();
+	_.each(elementsContainingQuery, function(element) {
+		// for each match, identify all possible strings that might contain query by finding the first word, counting n words forward, and checking if the first+n word matches
+		// if it does, then add the class highlight-match to first element through first+nth element
+		var spans = $(element).find(Utilities.interpolate("span:contains(%@)", this.queryComponents[0])).toArray();
+		_.each(spans, function(span) {
+			if (this.length > 1) {	
+				var lastWordOfQuery = $(span).nextAll().toArray()[this.length-2];
+				if (this.lastWord === lastWordOfQuery.innerHTML) {
+					var selectUntilLast = Utilities.interpolate("*:lt(%@)", this.length - 1);
+					$(span).addClass("highlight-match");
+					$(span).nextAll(selectUntilLast).addClass("highlight-match");
+				}
+			} else {
+				$(span).addClass("highlight-match");	
+			}
+		}, { lastWord: this.queryComponents[this.queryComponents.length-1], length: this.queryComponents.length });
+	}, context);
+
 	// render any possible math
 	this.renderMath();
 }
@@ -242,13 +265,13 @@ App.prototype.localFind = function(query) {
 			deferred.resolve(false);
 		}
 		var searchResults = Utilities.parseAckmateString(stdout);
-		this.renderSearchResults(searchResults, query);
+		this.showLocalFindResults(searchResults, query);
 		deferred.resolve(true);
 	}.bind(this, query, deferred));
 	return deferred;
 }
 
-App.prototype.renderSearchResults = function(searchResults, query) {
+App.prototype.showLocalFindResults = function(searchResults, query) {
 	var searchResultsDiv = window.document.createElement("DIV");
 	searchResultsDiv.className = "searchresults";	
 

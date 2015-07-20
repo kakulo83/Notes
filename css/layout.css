@@ -19,7 +19,7 @@ body {
 	font-family: "courier";
 	font-size: 12px;
 }
-#mode-container { /* should be equal to or greater than height of footer */
+#mode-container { 
 	min-height: 100%;
 	margin-bottom: 50px;
 	color: white;

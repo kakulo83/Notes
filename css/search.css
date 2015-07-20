@@ -4,11 +4,6 @@
 	font-family: ultralight;
   text-align: center;
 }
-span.queryname {
-  color: magenta;
-  font-weight: 500;
-  letter-spacing: 2px;
-}
 .searchresults {
 	color: white;
 }
@@ -36,6 +31,15 @@ span.queryname {
 .search-match {
 	padding: 10px;
 	border-radius: 12px;
+}
+.queryname {
+  font-weight: 500;
+  letter-spacing: 2px;
+}
+.highlight-match {
+	color: springgreen;
+	/*color: fuchsia;*/
+	font-weight: bolder;
 }
 .search-match p, .search-match pre {
 	overflow-wrap: break-word;
