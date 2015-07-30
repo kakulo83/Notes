@@ -1,13 +1,23 @@
 **************************************** FEATURES TO ADD **************************************** 
 
+		wrap keypress handler in an object/hash.  This way if another controller extends 
+		the ObjectController it can simply rewrite over the key: function() 
+
+
+		modify search: 
+			
+			- ( keyword_or_phrase tags:tag1,tag2,tag3 code:true image:true video:true math:true )
+			
+			- elasticsearch should index not only the title and content, but if there is an image,
+				video, code, or math content associated with the content
+
+					- then apply a boolean filter for the results
+
+
+
 		add more complex and powerful searching with elasticsearch	
 			- https://www.youtube.com/watch?v=60UsHHsKyN4
 			- keep complex elasticsearch tags (ex "how do I create a new shard") in a hidden div 
-
-
-		add global object file search with '<cTRL>p'
-			- Add ability to search multiple words i.e  "Cheat Sheet"
-			- Fix problem of highlighting multi word queries
 
 
 		add in-page content search with '/' 
@@ -18,11 +28,6 @@
 			- deleting a document should also delete the corresponding elasticsearch entry
 
 
-		add code_content type
-			- Highlight library:  https://github.com/isagalaev/highlight.js
-			- colorize each languages differently (mimic railscasts)
-
-	
 		add INDEX view
 			- Instead of a tree graph layout, list objects like NERDTree does, basically collapsible just
 				like content in an object view 
@@ -44,20 +49,11 @@
 				node.object file will be deleted	
 
 		
-		modify the mode-menu
-			- (A)ppend content should be entry point to adding new content.  If "a" is pressed, a 
-				new menu should replace the current mode-menu with the type of contents that can be added:
-		
-							(t)ext
-							(i)mage
-							(v)ideo
-							(m)ath text
-
-
 		add additional hot-key navigation
 			- Shift+H, Shift+M, Shift_L should move the current content to HIGH/MIDDLE/LOW positions
 			- gg should set the first content as the current content, and shift the page accordingly
 			- G should set the last content as the current content, and shift the page accordingly
+
 
 		add ability to create wiki-links
 			- Add vimium like mechanism for navigating to links using "f" key to show yellow
@@ -67,7 +63,6 @@
 			- Add a stack structure to store history of Objects viewed so quick navigation
 			backwards can be made using <Ctrl-o> for backwards
 
-		add ability to open other notes
 
 		start application from cmd-line with/without subject
 
@@ -79,6 +74,10 @@
 
 
 ******************************************  FIXES  ***************************************** 
+
+		- append content immediately after folded content makes it such that the folded content
+			does not reappear when unfolding AND the newly appended content is inserted between
+			the parent of the folded content and the folded content; wrong location
 
 		- appending between content results it being pushed to the end of all content
 

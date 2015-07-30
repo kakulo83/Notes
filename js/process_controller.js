@@ -317,10 +317,11 @@ ProcessController.handleKeyPress = function(e) {
 			case Constants.KeyEvent.DOM_VK_RETURN:
 				// Determine which action has been selected and execute it
 				var activeMenuItem = $(".local-menu-item.active");
-				this.processVisualSelection(activeMenuItem);	
-				hideLocalMenu(this.currentContent);			
-				$(this.currentContent).find(".editable").removeClass("highlighted");
+				//this.processVisualSelection(activeMenuItem);	
+				//hideLocalMenu(this.currentContent);			
+				//$(this.currentContent).find(".editable").removeClass("highlighted");
 				this.state = State.NORMAL;	
+				this.processVisualSelection(activeMenuItem);	
 				break;
 		}
 	}

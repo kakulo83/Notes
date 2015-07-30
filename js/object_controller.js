@@ -653,7 +653,7 @@ ObjectController.showVisualSelectMenu = function() {
 ObjectController.showCodeLanguageMenu = function() {
 	var localMenuDiv = window.document.createElement("DIV");
 	localMenuDiv.className = "local-menu-container";
-	var localMenu = window.Handlebars.helpers.localMenu(["Javascript", "Ruby", "Scheme", "Html", "CSS", "C++", "C", "Objective-C", "Lisp", "Java" ]);
+	var localMenu = window.Handlebars.helpers.localMenu(["Javascript", "Ruby", "Scheme", "Html", "CSS", "Bash", "C++", "C", "Objective-C", "Lisp", "Java" ]);
 	$(localMenuDiv).append(localMenu);
 	$(this.currentContent).prepend(localMenuDiv);
 }
@@ -937,6 +937,12 @@ ObjectController.moveDownContent = function() {
 				}
 			}
 		}
+	} 
+  else {
+		window.scrollBy(0, 500);
+		var currentContentBottom = this.currentContent.getBoundingClientRect().bottom;
+		if (currentContentBottom > window.innerHeight / 2)
+			scrollPastContent();	
 	}
 }
 
@@ -1118,7 +1124,7 @@ ObjectController.processVisualSelection = function(selection) {
 			this.app.renderMath();
 			break;
 		case "interpret_as_code":
-			this.showCodeLanguageMenu();	
+			this.showCodeLanguageMenu();
 			this.state = State.VISUAL_SELECT;	
 			break;
 		case "javascript":
@@ -1158,6 +1164,9 @@ ObjectController.processVisualSelection = function(selection) {
 			break;
 		case "java":
 			this.wrapTextInCodeTag(text, "java");			
+			break;
+		case "bash":
+			this.wrapTextInCodeTag(text, "bash");
 			break;
 		case "undo":
 			// TODO Add code and LaTeX undo action
@@ -1250,6 +1259,13 @@ function scrollUp(previousObject) {
 		var delta = boundingRect.top;
 		window.scrollBy(0, delta);
 	}
+}
+
+function scrollPastContent() {
+	// Add logic to prevent more than 1x scroll past 
+	var currentHeight = $("#object-container").height();
+	$("#object-container").height(currentHeight + 500);
+	window.scrollBy(0, 500);
 }
 
 function hideLocalMenu(currentContent) {
