@@ -140,6 +140,14 @@ ObjectController.handleKeyPress = function(e) {
 					this.state = State.QUICKLINK;
 				}
 				break;
+			case Constants.KeyEvent.DOM_VK_G:
+				if (e.shiftKey) {
+					var lastContent = this.contents.last()[0];
+					var scrollAmount = lastContent.getBoundingClientRect().bottom;
+					window.scrollBy(0, scrollAmount);
+					this.setCurrentContent(lastContent);
+				}
+				break;
 			case Constants.KeyEvent.DOM_VK_I:
 				this.app.changeMode(Constants.Mode.INDEX, null);
 				break;
@@ -939,7 +947,7 @@ ObjectController.moveDownContent = function() {
 		}
 	} 
   else {
-		window.scrollBy(0, 500);
+		window.scrollBy(0, 400);
 		var currentContentBottom = this.currentContent.getBoundingClientRect().bottom;
 		if (currentContentBottom > window.innerHeight / 2)
 			scrollPastContent();	
@@ -1262,10 +1270,9 @@ function scrollUp(previousObject) {
 }
 
 function scrollPastContent() {
-	// Add logic to prevent more than 1x scroll past 
 	var currentHeight = $("#object-container").height();
-	$("#object-container").height(currentHeight + 500);
-	window.scrollBy(0, 500);
+	$("#object-container").height(currentHeight + 400);
+	window.scrollBy(0, 400);
 }
 
 function hideLocalMenu(currentContent) {
