@@ -146,6 +146,9 @@ ObjectController.handleKeyPress = function(e) {
 					var scrollAmount = lastContent.getBoundingClientRect().bottom;
 					window.scrollBy(0, scrollAmount);
 					this.setCurrentContent(lastContent);
+				} else {
+					window.scrollTo(0,0);	
+					this.setCurrentContent(this.contents[0]);
 				}
 				break;
 			case Constants.KeyEvent.DOM_VK_I:

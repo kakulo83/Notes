@@ -1,5 +1,13 @@
 **************************************** FEATURES TO ADD **************************************** 
 
+		Make saving/writing to file more efficient:
+			- Check if the content being added is at the end.  If it is use node's fs.appendFile 
+				function to add to the tailend of the file
+
+			- If the content being added is somewhere in the middle, perform the more expensive
+				complete document write
+
+
 		wrap keypress handler in an object/hash.  This way if another controller extends 
 		the ObjectController it can simply rewrite over the key: function() 
 

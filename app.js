@@ -19,7 +19,7 @@ var ProcessController = require("./js/process_controller.js");
 
 // check operating system for the menu
 if (process.platform === "darwin") {
-    nativeMenuBar.createMacBuiltin("VIL Tool");
+  nativeMenuBar.createMacBuiltin("VIL Tool");
 }
 
 win.menu = nativeMenuBar;
@@ -68,7 +68,7 @@ App.prototype.init = function(subject) {
 	this.changeMode(Constants.Mode.TREE);
 
 	this.elasticsearchclient = this.initElasticSearch();
-}
+};
 
 App.prototype.changeMode = function(mode, selection) {
 	this.setMode(mode);
@@ -87,7 +87,7 @@ App.prototype.changeMode = function(mode, selection) {
 			break;
 		default:
 	}
-}
+};
 
 App.prototype.handleKeyPress = function(e) {
 	e = e || window.event;
@@ -111,14 +111,14 @@ App.prototype.handleKeyPress = function(e) {
 		default:
 			break;
 	}
-}
+};
 
 App.prototype.toggleMenu = function() {
 	if ($(UI.MODE_MENU_CONTAINER).is(":visible")) 
 		$(UI.MODE_MENU_CONTAINER).hide();
 	else
 		$(UI.MODE_MENU_CONTAINER).show();
-}
+};
 
 App.prototype.addToElasticSearch = function(data) {
 	this.elasticsearchclient.exists({
@@ -132,7 +132,7 @@ App.prototype.addToElasticSearch = function(data) {
 			this.createElasticSearchIndex(data);	
 		}
 	}.bind(this));	
-}
+};
 
 App.prototype.updateElasticSearchIndex = function(data) {
 	var record = Utilities.getElasticSearchJson(data.html);
@@ -154,7 +154,7 @@ App.prototype.updateElasticSearchIndex = function(data) {
 		else
 			console.log("Update successful");
 	});
-}
+};
 
 App.prototype.createElasticSearchIndex = function(data) {
 	var record = Utilities.getElasticSearchJson(data.html);
@@ -174,14 +174,14 @@ App.prototype.createElasticSearchIndex = function(data) {
 		else
 			console.log("Create successful");
 	});
-}
+};
 
 App.prototype.showGlobalFindInputField = function() {
 	$("#global-search-container").show();
 	$("#global-search-input").attr("placeholder", "Enter query");
 	$("#global-search-input").val("");
 	$("#global-search-input").focus();
-}
+};
 
 App.prototype.performGlobalFind = function() {
 	var searchterms = $("#global-search-input").val();
@@ -201,7 +201,7 @@ App.prototype.performGlobalFind = function() {
 		var hits = response.hits.hits;	
 		this.showGlobalFindResults(searchterms, hits);
 	}.bind(this,searchterms));
-}
+};
 
 App.prototype.showGlobalFindResults = function(query, hits) {
 	// display results
@@ -247,11 +247,11 @@ App.prototype.showGlobalFindResults = function(query, hits) {
 
 	// render any possible math
 	this.renderMath();
-}
+};
 
 App.prototype.closeFind = function() {
 	$("#global-search-container").hide();
-}
+};
 
 App.prototype.localFind = function(query) {
 	myCmd = 'ag --ackmate -G "(.object|.process)" --no-numbers -a -C ' + query + ' /Users/robertcarter/Documents/VIL/' + this.getSubject() + '.notes/';
@@ -269,7 +269,7 @@ App.prototype.localFind = function(query) {
 		deferred.resolve(true);
 	}.bind(this, query, deferred));
 	return deferred;
-}
+};
 
 App.prototype.showLocalFindResults = function(searchResults, query) {
 	var searchResultsDiv = window.document.createElement("DIV");
@@ -318,7 +318,7 @@ App.prototype.showLocalFindResults = function(searchResults, query) {
 	$(searchResultsDiv).find(".search-match").first().addClass("active");
 	$("#mode-container").append(searchResultsDiv);
 	this.renderMath(searchResultsDiv);
-}
+};
 
 App.prototype.moveDownSearchResult = function() {
 	var nextSearchMatch = $(UI.SEARCH_MATCH_ACTIVE).next();
@@ -327,7 +327,7 @@ App.prototype.moveDownSearchResult = function() {
 	$(nextSearchMatch).addClass("active");
 	var boundingRect = nextSearchMatch[0].getBoundingClientRect();
 	$(UI.SEARCH_MATCH_ACTIVE)[0].scrollIntoView({block: "end"});
-}
+};
 
 App.prototype.moveUpSearchResult = function() {
 	var prevSearchMatch = $(UI.SEARCH_MATCH_ACTIVE).prev();
@@ -335,14 +335,14 @@ App.prototype.moveUpSearchResult = function() {
 	$(UI.SEARCH_MATCH_ACTIVE).removeClass("active");
 	$(prevSearchMatch).addClass("active");
 	$(UI.SEARCH_MATCH_ACTIVE)[0].scrollIntoView({block: "top"});
-}
+};
 
 App.prototype.renderMath = function(element) {
 	if (element)
 		MathJax.Hub.Queue(["Typeset", MathJax.Hub, element]);
 	else
 		MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-}
+};
 
 App.prototype.openSearchMatch = function() {
 	// determine match file type and open appropriate mode
@@ -362,7 +362,7 @@ App.prototype.openSearchMatch = function() {
 			this.changeMode(Constants.Mode.PROCESS, selection);
 			break;
 	}
-}
+};
 
 App.prototype.initElasticSearch = function() {
 	// Check if there is an ealstic_search process running by using the ElasticSearchClient to 
@@ -391,7 +391,7 @@ App.prototype.initElasticSearch = function() {
 	}.bind(this));
 	
 	return ElasticSearchClient;
-}
+};
 
 App.prototype.startElasticSearch = function() {
 	elastic_search_command = 'elasticsearch'; 
@@ -401,10 +401,10 @@ App.prototype.startElasticSearch = function() {
 		 console.log('Error code: '+error.code);
 		 console.log('Signal received: '+error.signal);
 		}
-		console.log('Elasticsearch Process STDOUT: '+stdout);
+		console.log('Elasticsearch Process STDOUT: ' +stdout);
 		console.log('Elasticsearch cluster running :)');
 	}.bind(this));
-}
+};
 
 App.prototype.screenCapture = function(currentContent) {
 	// screencapture -s file 
@@ -418,4 +418,4 @@ App.prototype.screenCapture = function(currentContent) {
 	}.bind(this, deferred, screenPath));
 
 	return deferred;
-}
+};
